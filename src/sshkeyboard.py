@@ -125,7 +125,7 @@ def listen_keyboard(
     ), "Use listen_keyboard_async if you have async on_release"
 
     asyncio.run(
-        listen_keyboard_async(
+        listen_keyboard_async_manual(
             on_press,
             on_release,
             until,
@@ -140,7 +140,35 @@ def listen_keyboard(
     )
 
 
-async def listen_keyboard_async(
+def listen_keyboard_async(
+    on_press,
+    on_release,
+    until="esc",
+    sequental=False,
+    delay_second_char=0.75,
+    delay_others=0.05,
+    lower=True,
+    debug=False,
+    thread_pool_max_workers=None,
+    sleep=0.05,
+):
+    asyncio.run(
+        listen_keyboard_async_manual(
+            on_press,
+            on_release,
+            until,
+            sequental,
+            delay_second_char,
+            delay_others,
+            lower,
+            debug,
+            thread_pool_max_workers,
+            sleep,
+        )
+    )
+
+
+async def listen_keyboard_async_manual(
     on_press,
     on_release,
     until="esc",
@@ -167,6 +195,8 @@ async def listen_keyboard_async(
         executor = concurrent.futures.ThreadPoolExecutor(
             max_workers=thread_pool_max_workers
         )
+    else:
+        executor = None
 
     def done(task):
         if not task.cancelled() and task.exception() is not None:
@@ -222,13 +252,16 @@ async def listen_keyboard_async(
         current="",
     )
 
+    # Listen
     with _raw(sys.stdin), _nonblocking(sys.stdin):
         while _should_run:
             state = await _react_to_input(state, options)
             if sleep is not None:
                 await asyncio.sleep(sleep)
 
-    executor.shutdown()
+    # Cleanup
+    if executor is not None:
+        executor.shutdown()
     _running = False
     _should_run = True
 
@@ -353,4 +386,5 @@ if __name__ == "__main__":
 
     # Async version
     print("\nlistening_keyboard_async() running, press keys, and press 'esc' to exit")
-    asyncio.run(listen_keyboard_async(press, release))
+    listen_keyboard_async(press, release)
+    # ^this is the same as asyncio.run(listen_keyboard_async_manual(press, release))
