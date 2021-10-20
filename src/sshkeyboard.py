@@ -228,6 +228,12 @@ async def listen_keyboard_async(
 
     executor.shutdown()
     _running = False
+    _has_not_raised_errors = True
+
+
+def stop_listening():
+    global _has_not_raised_errors
+    _has_not_raised_errors = False
 
 
 # Raw and _nonblocking inspiration from: http://ballingt.com/_nonblocking-stdin-in-python-3/
