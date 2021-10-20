@@ -1,3 +1,7 @@
+"""sshkeyboard"""
+
+__version__ = "0.0.1"
+
 import asyncio
 import concurrent.futures
 import fcntl
@@ -10,6 +14,7 @@ import traceback
 from contextlib import contextmanager
 from time import time, sleep
 from types import SimpleNamespace
+
 
 # Global state
 
@@ -150,7 +155,7 @@ async def listen_keyboard_async(
     global _has_not_raised_errors
     assert not _running, "Only one listener allowed at a time"
     assert _has_not_raised_errors, "Should not have errors in the beginning already"
-    
+
     _running = True
     _has_not_raised_errors = True
 
