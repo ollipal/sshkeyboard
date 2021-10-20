@@ -28,8 +28,8 @@ _ANSI_CHAR_TO_READABLE = {
     "\x7f": "backspace",
     "\x1b[2~": "insert",
     "\x1b[3~": "delete",
-    "\x1b[5~": "page_up",
-    "\x1b[6~": "page_down",
+    "\x1b[5~": "pageup",
+    "\x1b[6~": "pagedown",
     "\x1b[H": "home",
     "\x1b[F": "end",
     "\x1b[A": "up",
@@ -98,7 +98,7 @@ _CHAR_TO_READABLE = {
 }
 
 
-def listen_sync(
+def listen_keyboard(
     on_press,
     on_release,
     until="esc",
@@ -110,15 +110,16 @@ def listen_sync(
     thread_pool_max_workers=None,
 ):
     assert not _running, "Only one listener allowed at a time"
+    assert _has_not_raised_errors, "Should not have errors in the beginning already"
     assert not asyncio.iscoroutinefunction(
         on_press
-    ), "Use listen_async if you have async on_press"
+    ), "Use listen_keyboard_async if you have async on_press"
     assert not asyncio.iscoroutinefunction(
         on_release
-    ), "Use listen_async if you have async on_release"
+    ), "Use listen_keyboard_async if you have async on_release"
 
     asyncio.run(
-        listen_async(
+        listen_keyboard_async(
             on_press,
             on_release,
             until,
@@ -133,7 +134,7 @@ def listen_sync(
     )
 
 
-async def listen_async(
+async def listen_keyboard_async(
     on_press,
     on_release,
     until="esc",
@@ -147,11 +148,14 @@ async def listen_async(
 ):
     global _running
     global _has_not_raised_errors
+    assert not _running, "Only one listener allowed at a time"
+    assert _has_not_raised_errors, "Should not have errors in the beginning already"
+    
     _running = True
     _has_not_raised_errors = True
 
     # Create thread pool executor only if it will get used
-    if not asyncio.iscoroutinefunction(on_press) or asyncio.iscoroutinefunction(
+    if not asyncio.iscoroutinefunction(on_press) or not asyncio.iscoroutinefunction(
         on_release
     ):
         executor = concurrent.futures.ThreadPoolExecutor(
@@ -335,8 +339,8 @@ if __name__ == "__main__":
 
     # Sync version
     print("Listening keyboard, sync version, press 'esc' to exit")
-    listen_sync(press, release)
+    listen_keyboard(press, release)
 
     # Async version
     print("\nListening keyboard, async version, press 'esc' to exit")
-    asyncio.run(listen_async(press, release))
+    asyncio.run(listen_keyboard_async(press, release))
