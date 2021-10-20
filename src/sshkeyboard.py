@@ -21,8 +21,9 @@ from types import SimpleNamespace
 # Makes sure only listener can be started at a time
 _running = False
 # Makes sure listener stops if error has been raised
-# inside thread pool excecutor or asyncio task
-_has_not_raised_errors = True
+# inside thread pool excecutor or asyncio task or
+# stop_listening() has been called
+_should_run = True
 
 # All possible characters here:
 # https://github.com/prompt-toolkit/python-prompt-toolkit/blob/master/prompt_toolkit/input/ansi_escape_sequences.py
@@ -115,7 +116,7 @@ def listen_keyboard(
     thread_pool_max_workers=None,
 ):
     assert not _running, "Only one listener allowed at a time"
-    assert _has_not_raised_errors, "Should not have errors in the beginning already"
+    assert _should_run, "Should not have errors in the beginning already"
     assert not asyncio.iscoroutinefunction(
         on_press
     ), "Use listen_keyboard_async if you have async on_press"
@@ -152,12 +153,12 @@ async def listen_keyboard_async(
     sleep=0.05,
 ):
     global _running
-    global _has_not_raised_errors
+    global _should_run
     assert not _running, "Only one listener allowed at a time"
-    assert _has_not_raised_errors, "Should not have errors in the beginning already"
+    assert _should_run, "Should not have errors in the beginning already"
 
     _running = True
-    _has_not_raised_errors = True
+    _should_run = True
 
     # Create thread pool executor only if it will get used
     if not asyncio.iscoroutinefunction(on_press) or not asyncio.iscoroutinefunction(
@@ -167,19 +168,12 @@ async def listen_keyboard_async(
             max_workers=thread_pool_max_workers
         )
 
-    state = SimpleNamespace(
-        press_time=time(),
-        initial_press_time=time(),
-        previous="",
-        current="",
-    )
-
     def done(task):
         if not task.cancelled() and task.exception() is not None:
             ex = task.exception()
             traceback.print_exception(type(ex), ex, ex.__traceback__)
-            global _has_not_raised_errors
-            _has_not_raised_errors = False
+            global _should_run
+            _should_run = False
 
     async def on_press_callback(key):
         if sequental:
@@ -209,31 +203,39 @@ async def listen_keyboard_async(
                 future = executor.submit(on_release, key)
                 future.add_done_callback(done)
 
+    # Package parameters into namespaces so they are easier to pass around
+    # options do not change
+    options = SimpleNamespace(
+        on_press_callback=on_press_callback,
+        on_release_callback=on_release_callback,
+        until=until,
+        delay_second_char=delay_second_char,
+        delay_others=delay_others,
+        lower=lower,
+        debug=debug,
+    )
+    # state can change
+    state = SimpleNamespace(
+        press_time=time(),
+        initial_press_time=time(),
+        previous="",
+        current="",
+    )
+
     with _raw(sys.stdin), _nonblocking(sys.stdin):
-        while _has_not_raised_errors:
-            should_stop, state = await _react_to_key_input(
-                state,
-                on_press_callback,
-                on_release_callback,
-                until,
-                delay_second_char,
-                delay_others,
-                lower,
-                debug,
-            )
-            if should_stop:
-                break
+        while _should_run:
+            state = await _react_to_input(state, options)
             if sleep is not None:
                 await asyncio.sleep(sleep)
 
     executor.shutdown()
     _running = False
-    _has_not_raised_errors = True
+    _should_run = True
 
 
 def stop_listening():
-    global _has_not_raised_errors
-    _has_not_raised_errors = False
+    global _should_run
+    _should_run = False
 
 
 # Raw and _nonblocking inspiration from: http://ballingt.com/_nonblocking-stdin-in-python-3/
@@ -279,15 +281,13 @@ def _read_and_parse_ansi(char):
         return None, char
 
 
-async def _react_to_key_input(
-    state, on_press, on_release, until, delay_second_char, delay_others, lower, debug
-):
+async def _react_to_input(state, options):
     # Read next character
     state.current = _read_chars(1)
 
     # Skip and continue if read failed
     if state.current is None:
-        return False, state
+        return state
 
     # Handle any character
     elif state.current != "":
@@ -295,30 +295,29 @@ async def _react_to_key_input(
         if _is_ansi(state.current):
             state.current, raw = _read_and_parse_ansi(state.current)
             if state.current is None:
-                if debug:
+                if options.debug:
                     print(f"Non-supported ansi char: {repr(raw)}")
-                return False, state
+                return state
         # Change some character representations to readable strings
         elif state.current in _CHAR_TO_READABLE:
             state.current = _CHAR_TO_READABLE[state.current]
 
         # Make lower case if requested
-        if lower:
+        if options.lower:
             state.current = state.current.lower()
 
         # Stop if until character has been read
-        if state.current == until:
-            state.previous = ""
-            state.current = ""
-            return True, state
+        if state.current == options.until:
+            stop_listening()
+            return state
 
         # Release state.previous if new pressed
         if state.previous is not "" and state.current != state.previous:
-            await on_release(state.previous)
+            await options.on_release_callback(state.previous)
 
         # Press if new character, update state.previous
         if state.current != state.previous:
-            await on_press(state.current)
+            await options.on_press_callback(state.current)
             state.initial_press_time = time()
             state.previous = state.current
 
@@ -331,13 +330,13 @@ async def _react_to_key_input(
     # and enough time has passed
     # - The second character comes slower than the rest on terminal
     elif state.previous is not "" and (
-        time() - state.initial_press_time > delay_second_char
-        and time() - state.press_time > delay_others
+        time() - state.initial_press_time > options.delay_second_char
+        and time() - state.press_time > options.delay_others
     ):
-        await on_release(state.previous)
+        await options.on_release_callback(state.previous)
         state.previous = state.current
 
-    return False, state
+    return state
 
 
 if __name__ == "__main__":
@@ -349,9 +348,9 @@ if __name__ == "__main__":
         print(f"'{key}' released")
 
     # Sync version
-    print("Listening keyboard, sync version, press 'esc' to exit")
+    print("listening_keyboard() running, press keys, and press 'esc' to exit")
     listen_keyboard(press, release)
 
     # Async version
-    print("\nListening keyboard, async version, press 'esc' to exit")
+    print("\nlistening_keyboard_async() running, press keys, and press 'esc' to exit")
     asyncio.run(listen_keyboard_async(press, release))
