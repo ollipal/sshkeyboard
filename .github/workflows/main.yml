@@ -5,33 +5,25 @@ on: [push, pull_request]
 jobs:
   tests:
     runs-on: ubuntu-latest
-
+    env:
+      TOX_PARALLEL_NO_SPINNER: 1 # Removes logging spam
     steps:
-      - name: Checkout
-        uses: actions/checkout@v2
-
-      - name: Setup Python
-        uses: actions/setup-python@v2
+      - name: Setup Pythons
+        uses: actions/checkout@v2 # Required
+      - uses: actions/setup-python@v2
         with:
           python-version: '3.7'
-
-      - name: Setup Python
-        uses: actions/setup-python@v2
+      - uses: actions/setup-python@v2
         with:
           python-version: '3.8'
-
-      - name: Setup Python
-        uses: actions/setup-python@v2
+      - uses: actions/setup-python@v2
         with:
           python-version: '3.9'
-
-      - name: Setup Python
-        uses: actions/setup-python@v2
+      - uses: actions/setup-python@v2
         with:
           python-version: '3.10'
 
-      - name: Install dependencies
+      - name: Install tox and run tests
         run: |
           pip install tox
-      - name: Run tests
-        run: tox
+          tox --parallel
