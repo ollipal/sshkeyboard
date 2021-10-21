@@ -31,3 +31,21 @@ force_grid_wrap = 0
 use_parentheses = true
 ensure_newline_before_comments = true
 line_length = 79
+
+[tool.black]
+line-length = 79
+exclude = '''
+/(
+    \.git
+  | \.tox
+  | \.venv
+  | _build
+  | build
+)/
+'''
+
+[tool.flake8]
+ignore = "E203,E231,W503,I202"
+max-line-length = 79
+max-complexity = 18
+select = "B,C,E,F,W,T4,B9,N"

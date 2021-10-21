@@ -2,9 +2,8 @@ from contextlib import contextmanager
 
 import sshkeyboard
 
-# This overrides everything that uses sys.stdin
-# and makes _read_chars predictable
 i = -1
+return_chars = ("a", "a", "b", "")
 
 
 def setup_testing():
@@ -15,9 +14,6 @@ def setup_testing():
     @contextmanager
     def _nonblocking(stream):
         yield
-
-    # Returns these characters in a sequence
-    return_chars = ("a", "a", "b", "")
 
     def _read_chars(amount):
         global i
@@ -38,32 +34,32 @@ def empty(key):
 
 def returns_char(key):
     if key not in return_chars:
-        throw(f"Not correct char {key}")
+        raise RuntimeError(f"Not correct char {key}")
     sshkeyboard.stop_listening()
 
 
 def press_listen(key):
     try:
         sshkeyboard.listen_keyboard(empty, empty)
-        print("FAIL")
+        raise RuntimeError("Error not raised")
     except AssertionError:
-        print("SUCCESS")
+        pass
     sshkeyboard.stop_listening()
 
 
 def press_listen_async(key):
     try:
         sshkeyboard.listen_keyboard_async(empty, empty)
-        print("FAIL")
+        raise RuntimeError("Error not raised")
     except AssertionError:
-        print("SUCCESS")
+        pass
     sshkeyboard.stop_listening()
 
 
 def test_listen_returns_char():
     # listen_keyboard press
     sshkeyboard.listen_keyboard(returns_char, empty)
-    # listen_keyboard relese
+    # listen_keyboard release
     sshkeyboard.listen_keyboard(empty, returns_char)
     # listen_keyboard press
     sshkeyboard.listen_keyboard_async(returns_char, empty)
@@ -82,4 +78,5 @@ def test_multiple_listens_raises_error():
     sshkeyboard.listen_keyboard_async(press_listen_async, empty)
 
 
-# TODO, assert async fails listen, test sleeps, schedule orders, throwing errors etc.
+# TODO, assert async fails listen, test sleeps,
+# schedule orders, throwing errors etc.

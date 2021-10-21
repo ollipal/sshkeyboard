@@ -1,1 +1,6 @@
+tox==3.24.4
+black==21.9b0
 isort==5.9.3
+pyproject-flake8==0.0.1a2
+pep8-naming==0.12.1
+codespell==2.1.0

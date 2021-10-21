@@ -35,7 +35,43 @@ jobs:
       - name: Setup Pythons
         uses: actions/checkout@v2
 
-      - name: Install dependencies
+      - name: Install and run isort
         run: |
           pip install isort==5.9.3
           isort --settings-file pyproject.toml --check-only .
+
+  black:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Install and run black
+        run: |
+          pip install black==21.9b0
+          black --check --diff --config=pyproject.toml .
+
+  pflake8:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Install and run pflake8
+        run: |
+          pip install pyproject-flake8==0.0.1a2 pep8-naming==0.12.1 pep8-naming==0.12.1
+          pflake8 --config=pyproject.toml
+
+  codespell:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Install and run codespell
+        run: |
+          pip install codespell==2.1.0
+          codespell ./src ./tests

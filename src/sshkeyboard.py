@@ -11,7 +11,7 @@ import termios
 import traceback
 import tty
 from contextlib import contextmanager
-from time import sleep, time
+from time import time
 from types import SimpleNamespace
 
 # Global state
@@ -19,7 +19,7 @@ from types import SimpleNamespace
 # Makes sure only listener can be started at a time
 _running = False
 # Makes sure listener stops if error has been raised
-# inside thread pool excecutor or asyncio task or
+# inside thread pool executor or asyncio task or
 # stop_listening() has been called
 _should_run = True
 
@@ -188,7 +188,9 @@ async def listen_keyboard_async_manual(
     _should_run = True
 
     # Create thread pool executor only if it will get used
-    if not asyncio.iscoroutinefunction(on_press) or not asyncio.iscoroutinefunction(on_release):
+    if not asyncio.iscoroutinefunction(
+        on_press
+    ) or not asyncio.iscoroutinefunction(on_release):
         executor = concurrent.futures.ThreadPoolExecutor(
             max_workers=thread_pool_max_workers
         )
@@ -274,10 +276,10 @@ def stop_listening():
     _should_run = False
 
 
-# Raw and _nonblocking inspiration from: http://ballingt.com/_nonblocking-stdin-in-python-3/
+# Raw and _nonblocking inspiration from:
+# http://ballingt.com/_nonblocking-stdin-in-python-3/
 @contextmanager
 def _raw(stream):
-    fd = stream.fileno()
     original_stty = termios.tcgetattr(stream)
     try:
         tty.setcbreak(stream)
@@ -349,7 +351,7 @@ async def _react_to_input(state, options):
             return state
 
         # Release state.previous if new pressed
-        if state.previous is not "" and state.current != state.previous:
+        if state.previous != "" and state.current != state.previous:
             await options.on_release_callback(state.previous)
 
         # Press if new character, update state.previous
@@ -366,7 +368,7 @@ async def _react_to_input(state, options):
     # - Release the state.previous character if nothing is read
     # and enough time has passed
     # - The second character comes slower than the rest on terminal
-    elif state.previous is not "" and (
+    elif state.previous != "" and (
         time() - state.initial_press_time > options.delay_second_char
         and time() - state.press_time > options.delay_others
     ):
@@ -389,6 +391,10 @@ if __name__ == "__main__":
     listen_keyboard(on_press=press, on_release=release)
 
     # Async version
-    print("\nlistening_keyboard_async() running, press keys, and press 'esc' to exit")
+    print(
+        "\nlistening_keyboard_async() running, press keys,"
+        "and press 'esc' to exit"
+    )
     listen_keyboard_async(on_press=press, on_release=release)
-    # ^this is the same as asyncio.run(listen_keyboard_async_manual(press, release))
+    # ^this is the same as
+    # asyncio.run(listen_keyboard_async_manual(press, release))
