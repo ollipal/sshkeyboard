@@ -10,3 +10,16 @@ dynamic = ["version", "description"]
 
 [project.urls]
 Home = "https://github.com/ollipal/sshkeyboard"
+
+[tool.tox]
+legacy_tox_ini = """
+[tox]
+isolated_build = True
+envlist = py37, py38, py39, py310
+
+[testenv]
+deps =
+    pytest
+commands =
+    pytest tests
+"""
