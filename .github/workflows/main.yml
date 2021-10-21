@@ -1,9 +1,9 @@
-name: Tests
+name: Tests and linting
  
 on: [push, pull_request]
 
 jobs:
-  tests:
+  tox:
     runs-on: ubuntu-latest
     env:
       TOX_PARALLEL_NO_SPINNER: 1 # Removes logging spam
@@ -27,3 +27,15 @@ jobs:
         run: |
           pip install tox
           tox --parallel
+
+  isort:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Setup Pythons
+        uses: actions/checkout@v2
+
+      - name: Install dependencies
+        run: |
+          pip install isort==5.9.3
+          isort --settings-file pyproject.toml --check-only .

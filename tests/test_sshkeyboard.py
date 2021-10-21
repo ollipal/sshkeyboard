@@ -1,6 +1,6 @@
-import sshkeyboard
-
 from contextlib import contextmanager
+
+import sshkeyboard
 
 # This overrides everything that uses sys.stdin
 # and makes _read_chars predictable

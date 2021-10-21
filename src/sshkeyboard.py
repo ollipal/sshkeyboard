@@ -8,13 +8,11 @@ import fcntl
 import os
 import sys
 import termios
-import tty
 import traceback
-
+import tty
 from contextlib import contextmanager
-from time import time, sleep
+from time import sleep, time
 from types import SimpleNamespace
-
 
 # Global state
 
