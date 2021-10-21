@@ -105,8 +105,8 @@ _CHAR_TO_READABLE = {
 
 
 def listen_keyboard(
-    on_press,
-    on_release,
+    on_press=None,
+    on_release=None,
     until="esc",
     sequental=False,
     delay_second_char=0.75,
@@ -115,8 +115,6 @@ def listen_keyboard(
     debug=False,
     thread_pool_max_workers=None,
 ):
-    assert not _running, "Only one listener allowed at a time"
-    assert _should_run, "Should not have errors in the beginning already"
     assert not asyncio.iscoroutinefunction(
         on_press
     ), "Use listen_keyboard_async if you have async on_press"
@@ -141,8 +139,8 @@ def listen_keyboard(
 
 
 def listen_keyboard_async(
-    on_press,
-    on_release,
+    on_press=None,
+    on_release=None,
     until="esc",
     sequental=False,
     delay_second_char=0.75,
@@ -169,8 +167,8 @@ def listen_keyboard_async(
 
 
 async def listen_keyboard_async_manual(
-    on_press,
-    on_release,
+    on_press=None,
+    on_release=None,
     until="esc",
     sequental=False,
     delay_second_char=0.75,
@@ -184,14 +182,15 @@ async def listen_keyboard_async_manual(
     global _should_run
     assert not _running, "Only one listener allowed at a time"
     assert _should_run, "Should not have errors in the beginning already"
+    assert (
+        on_press is not None or on_release is not None
+    ), "Either on_press or on_release should be defined"
 
     _running = True
     _should_run = True
 
     # Create thread pool executor only if it will get used
-    if not asyncio.iscoroutinefunction(on_press) or not asyncio.iscoroutinefunction(
-        on_release
-    ):
+    if not asyncio.iscoroutinefunction(on_press) or not asyncio.iscoroutinefunction(on_release):
         executor = concurrent.futures.ThreadPoolExecutor(
             max_workers=thread_pool_max_workers
         )
@@ -206,6 +205,9 @@ async def listen_keyboard_async_manual(
             _should_run = False
 
     async def on_press_callback(key):
+        if on_press is None:
+            return
+
         if sequental:
             if asyncio.iscoroutinefunction(on_press):
                 await on_press(key)
@@ -220,6 +222,9 @@ async def listen_keyboard_async_manual(
                 future.add_done_callback(done)
 
     async def on_release_callback(key):
+        if on_release is None:
+            return
+
         if sequental:
             if asyncio.iscoroutinefunction(on_release):
                 await on_release(key)
@@ -234,7 +239,7 @@ async def listen_keyboard_async_manual(
                 future.add_done_callback(done)
 
     # Package parameters into namespaces so they are easier to pass around
-    # options do not change
+    # Options do not change
     options = SimpleNamespace(
         on_press_callback=on_press_callback,
         on_release_callback=on_release_callback,
@@ -244,7 +249,7 @@ async def listen_keyboard_async_manual(
         lower=lower,
         debug=debug,
     )
-    # state can change
+    # State does change
     state = SimpleNamespace(
         press_time=time(),
         initial_press_time=time(),
@@ -301,6 +306,7 @@ def _read_chars(amount):
         return None
 
 
+# '\x' at the start is a good indicator for ansi character
 def _is_ansi(char):
     rep = repr(char)
     return len(rep) >= 2 and rep[1] == "\\" and rep[2] == "x"
@@ -382,9 +388,9 @@ if __name__ == "__main__":
 
     # Sync version
     print("listening_keyboard() running, press keys, and press 'esc' to exit")
-    listen_keyboard(press, release)
+    listen_keyboard(on_press=press, on_release=release)
 
     # Async version
     print("\nlistening_keyboard_async() running, press keys, and press 'esc' to exit")
-    listen_keyboard_async(press, release)
+    listen_keyboard_async(on_press=press, on_release=release)
     # ^this is the same as asyncio.run(listen_keyboard_async_manual(press, release))
