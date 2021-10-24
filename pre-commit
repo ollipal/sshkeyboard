@@ -9,7 +9,8 @@ TOX_ENVS='py37'
 #   gem install mdl -v 0.11.0
 RUN_MDL=false
 
-set -e 
+# Exit on failure
+set -e
 
 echo "tox:"
 tox -e $TOX_ENVS --parallel
@@ -36,3 +37,6 @@ if [ "$RUN_MDL" = true ] ; then
     mdl --style '.mdl-style.rb' .
     echo "--------------------------------"
 fi
+
+echo
+echo "SUCCESS"
