@@ -31,6 +31,8 @@ Anyways in my experience other libraries know how to handle Windows
 
 ## Development
 
+### Before commiting / pipelines
+
 If you want to check locally that the Github pipelines work, first install
 dependencies with
 
@@ -56,3 +58,12 @@ installed. If you want to run that locally as well, install Ruby and install
 markdown lint with `gem install mdl -v 0.11.0`. Then from `pre-commit`
 change `RUN_MDL=false` to `RUN_MDL=true`. (You need to copy the file again
 into .git/hooks if you did that earlier)
+
+### Documentation
+
+python3 -m venv .env
+source .env/bin/activate
+pip install -r dev-requirements.txt
+cd docs
+sphinx-autobuild ./source/ ./build/html/
+deactivate

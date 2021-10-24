@@ -37,7 +37,7 @@ jobs:
       - name: Install and run isort
         run: |
           pip install isort==5.9.3
-          isort --settings-file pyproject.toml --check-only .
+          isort --settings-file pyproject.toml --check-only ./src ./tests
 
   black:
     runs-on: ubuntu-latest
@@ -48,7 +48,7 @@ jobs:
       - name: Install and run black
         run: |
           pip install black==21.9b0
-          black --check --diff --config=pyproject.toml .
+          black --check --diff --config=pyproject.toml ./src ./tests
 
   pflake8:
     runs-on: ubuntu-latest

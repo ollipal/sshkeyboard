@@ -20,11 +20,11 @@ tox -e $TOX_ENVS --parallel || die
 echo -e "--------------------------------\n"
 
 echo "isort:"
-isort --settings-file pyproject.toml . || die
+isort --settings-file pyproject.toml ./src ./tests || die
 echo -e "--------------------------------\n"
 
 echo "black:"
-black --config=pyproject.toml . || die
+black --config=pyproject.toml ./src ./tests || die
 echo -e "--------------------------------\n"
 
 echo "pflake8:"

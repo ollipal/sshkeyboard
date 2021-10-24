@@ -39,8 +39,13 @@ exclude = '''
     \.git
   | \.tox
   | \.venv
+  | \.env
   | _build
   | build
+  | docs
+  | dist
+  | .github
+  | __pycache__
 )/
 '''
 
@@ -49,3 +54,4 @@ ignore = "E203,E231,W503,I202"
 max-line-length = 79
 max-complexity = 18
 select = "B,C,E,F,W,T4,B9,N"
+exclude = ".git,.tox,.venv,.env,docs,dist,.github,__pycache__"
