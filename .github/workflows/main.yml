@@ -8,8 +8,8 @@ jobs:
     env:
       TOX_PARALLEL_NO_SPINNER: 1 # Removes logging spam
     steps:
-      - name: Setup Pythons
-        uses: actions/checkout@v2 # Required
+      - name: Checkout and setup Pythons
+        uses: actions/checkout@v2
       - uses: actions/setup-python@v2
         with:
           python-version: '3.7'
@@ -30,9 +30,8 @@ jobs:
 
   isort:
     runs-on: ubuntu-latest
-
     steps:
-      - name: Setup Pythons
+      - name: Checkout
         uses: actions/checkout@v2
 
       - name: Install and run isort
@@ -42,7 +41,6 @@ jobs:
 
   black:
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout
         uses: actions/checkout@v2
@@ -54,19 +52,17 @@ jobs:
 
   pflake8:
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout
         uses: actions/checkout@v2
 
-      - name: Install and run pflake8
+      - name: Install and run pflake8, pep8-naming
         run: |
-          pip install pyproject-flake8==0.0.1a2 pep8-naming==0.12.1 pep8-naming==0.12.1
+          pip install pyproject-flake8==0.0.1a2 pep8-naming==0.12.1
           pflake8 --config=pyproject.toml
 
   codespell:
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout
         uses: actions/checkout@v2
@@ -78,7 +74,6 @@ jobs:
 
   markdownlint:
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout
         uses: actions/checkout@v2
@@ -88,7 +83,7 @@ jobs:
         with:
           ruby-version: 2.7.2
 
-      - name: Install dependencies
+      - name: Install and run markdown lint
         run: |
           gem install mdl -v 0.11.0
           mdl --style '.mdl-style.rb' .
