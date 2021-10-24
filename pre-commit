@@ -9,34 +9,35 @@ TOX_ENVS='py37'
 #   gem install mdl -v 0.11.0
 RUN_MDL=false
 
-# Exit on failure
-set -e
+function die(){
+ echo -e "\033[0;31mFAILURE"
+ exit 1
+}
 
 echo "tox:"
-tox -e $TOX_ENVS --parallel
-echo "--------------------------------"
+tox -e $TOX_ENVS --parallel || die
+echo -e "--------------------------------\n"
 
 echo "isort:"
-isort --settings-file pyproject.toml .
-echo "--------------------------------"
+isort --settings-file pyproject.toml . || die
+echo -e "--------------------------------\n"
 
 echo "black:"
-black --config=pyproject.toml .
-echo "--------------------------------"
+black --config=pyproject.toml . || die
+echo -e "--------------------------------\n"
 
 echo "pflake8:"
-pflake8 --config=pyproject.toml
-echo "--------------------------------"
+pflake8 --config=pyproject.toml || die
+echo -e "--------------------------------\n"
 
 echo "codespell:"
-codespell ./src ./tests
-echo "--------------------------------"
+codespell ./src ./tests || die
+echo -e "--------------------------------\n"
 
 if [ "$RUN_MDL" = true ] ; then
     echo "mdl:"
-    mdl --style '.mdl-style.rb' .
-    echo "--------------------------------"
+    mdl --style '.mdl-style.rb' . || die
+    echo -e "--------------------------------\n"
 fi
 
-echo
-echo "SUCCESS"
+echo -e "\033[0;32m\nSUCCESS"
