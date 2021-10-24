@@ -65,5 +65,6 @@ python3 -m venv .env
 source .env/bin/activate
 pip install -r dev-requirements.txt
 cd docs
+make html
 sphinx-autobuild ./source/ ./build/html/
 deactivate

@@ -7,3 +7,4 @@ codespell==2.1.0
 Sphinx==4.2.0
 sphinx-autobuild-2021.3.14
 sphinx-copybutton==0.4.0
+furo=2021.10.9

@@ -113,6 +113,28 @@ def listen_keyboard(
     debug=False,
     thread_pool_max_workers=None,
 ):
+    """Listen for keyboard events and fire callback functions
+
+    Args:
+        on_press (function, optional): function that gets called when key gets
+            pressed. Defaults to None.
+        on_release (function, optional): function that gets called when key
+            gets released. Defaults to None.
+        until (str, optional): a key that will end keyboard listening.
+            Defaults to "esc".
+        sequental (bool, optional): defines whether callback can be started
+            while the previous is still running. Defaults to False.
+        delay_second_char (float, optional): The timeout that depends on
+            terminal. Defaults to 0.75.
+        delay_others (float, optional): Another timeoput. Defaults to 0.05.
+        lower (bool, optional): whether the callback 'key' parameter gets
+            turned intop lower key or not. Defaults to True.
+        debug (bool, optional): print debug messages. Defaults to False.
+        thread_pool_max_workers (None|int, optional): Define the number of
+            ThreadPoolWrokers, None means that a default value will get used.
+            Defaults to None.
+    """
+
     assert not asyncio.iscoroutinefunction(
         on_press
     ), "Use listen_keyboard_async if you have async on_press"

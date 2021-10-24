@@ -11,6 +11,7 @@ Welcome to sshkeyboard's documentation!
    :caption: Contents:
 
    changelog
+   reference_index
 
 Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nam maximus condimentum
 fringilla. Phasellus cursus ligula eget diam faucibus, nec maximus metus ornare.
