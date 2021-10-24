@@ -1,10 +1,45 @@
 # sshkeyboard
 
-The only keyboard that works in _all_ unix environments
+The only keyboard event callback  library that works in _all_ unix environments.
 
-No dependencies
+This means that it does not depend on X server, uinput, root access (sudo) or
+any third party libraries or programs.
 
-Works without sudo and without x server
+For Python 3.7+.
+
+[Documentation](https://sshkeyboard.readthedocs.io)
+
+## Quick start
+
+Installation:
+
+```
+pip install sshkeyboard
+```
+
+Simple examble to fire events when a key is pressed or released
+`esc` ends listening by default:
+
+```python
+from sshkeyboard import listen_keyboard
+
+
+def press(key):
+    print(f"'{key}' pressed")
+
+def release(key):
+    print(f"'{key}' released")
+
+listen_keyboard(on_press=press, on_release=release)
+```
+Output:
+```
+$ python example.py
+'a' pressed
+'a' released
+```
+
+## Limitations
 
 But... it has some drawbacks due to the limitations
 
@@ -15,6 +50,20 @@ without x server or when I'm using
 -- relation to pynput and keyboard
 
 -- graph
+
+Some keys do not fire
+
+## Comparison to other Python keyboard libraries
+
+-
+
+## Advanced use
+
+- sequental
+- async (also manual version)
+- on_press fires multiple times / on_release is too slow
+- end listening on some other key
+- key output looks wrong (debug, lower, skips modifier keys as they cause confusion)
 
 ## How it works
 
