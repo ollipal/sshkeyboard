@@ -10,7 +10,7 @@ TOX_ENVS='py37'
 RUN_MDL=false
 
 function die(){
- echo -e "\033[0;31mFAILURE"
+ echo -e "\033[0;31mFAILURE\033[0m"
  exit 1
 }
 
@@ -40,4 +40,4 @@ if [ "$RUN_MDL" = true ] ; then
     echo -e "--------------------------------\n"
 fi
 
-echo -e "\033[0;32m\nSUCCESS"
+echo -e "\033[0;32m\nSUCCESS\033[0m"
