@@ -9,22 +9,30 @@ TOX_ENVS='py37'
 #   gem install mdl -v 0.11.0
 RUN_MDL=false
 
+set -e 
+
 echo "tox:"
 tox -e $TOX_ENVS --parallel
+echo "--------------------------------"
 
 echo "isort:"
 isort --settings-file pyproject.toml .
+echo "--------------------------------"
 
 echo "black:"
 black --config=pyproject.toml .
+echo "--------------------------------"
 
 echo "pflake8:"
 pflake8 --config=pyproject.toml
+echo "--------------------------------"
 
 echo "codespell:"
 codespell ./src ./tests
+echo "--------------------------------"
 
 if [ "$RUN_MDL" = true ] ; then
     echo "mdl:"
     mdl --style '.mdl-style.rb' .
+    echo "--------------------------------"
 fi

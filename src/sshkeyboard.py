@@ -188,14 +188,13 @@ async def listen_keyboard_async_manual(
     _should_run = True
 
     # Create thread pool executor only if it will get used
+    executor = None
     if not asyncio.iscoroutinefunction(
         on_press
     ) or not asyncio.iscoroutinefunction(on_release):
         executor = concurrent.futures.ThreadPoolExecutor(
             max_workers=thread_pool_max_workers
         )
-    else:
-        executor = None
 
     def done(task):
         if not task.cancelled() and task.exception() is not None:
@@ -204,45 +203,31 @@ async def listen_keyboard_async_manual(
             global _should_run
             _should_run = False
 
-    async def on_press_callback(key):
-        if on_press is None:
-            return
+    def callback(cb_function):
+        async def _callback(key):
+            if cb_function is None:
+                return
 
-        if sequental:
-            if asyncio.iscoroutinefunction(on_press):
-                await on_press(key)
+            if sequental:
+                if asyncio.iscoroutinefunction(cb_function):
+                    await cb_function(key)
+                else:
+                    cb_function(key)
             else:
-                on_press(key)
-        else:
-            if asyncio.iscoroutinefunction(on_press):
-                task = asyncio.create_task(on_press(key))
-                task.add_done_callback(done)
-            else:
-                future = executor.submit(on_press, key)
-                future.add_done_callback(done)
+                if asyncio.iscoroutinefunction(cb_function):
+                    task = asyncio.create_task(cb_function(key))
+                    task.add_done_callback(done)
+                else:
+                    future = executor.submit(cb_function, key)
+                    future.add_done_callback(done)
 
-    async def on_release_callback(key):
-        if on_release is None:
-            return
-
-        if sequental:
-            if asyncio.iscoroutinefunction(on_release):
-                await on_release(key)
-            else:
-                on_release(key)
-        else:
-            if asyncio.iscoroutinefunction(on_release):
-                task = asyncio.create_task(on_release(key))
-                task.add_done_callback(done)
-            else:
-                future = executor.submit(on_release, key)
-                future.add_done_callback(done)
+        return _callback
 
     # Package parameters into namespaces so they are easier to pass around
     # Options do not change
     options = SimpleNamespace(
-        on_press_callback=on_press_callback,
-        on_release_callback=on_release_callback,
+        on_press_callback=callback(on_press),
+        on_release_callback=callback(on_release),
         until=until,
         delay_second_char=delay_second_char,
         delay_others=delay_others,
