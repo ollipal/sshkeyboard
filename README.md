@@ -44,7 +44,7 @@ Then you can run the pipelines locally with
 ./pre-commit
 ```
 
-If you want to automatically run these before commiting, copy the
+If you want to automatically run these when commiting, copy the
 script into .git/hooks directory:
 
 ```
@@ -52,7 +52,7 @@ cp pre-commit .git/hooks/
 ```
 
 Note: this process does not run markdown lint as it requires Ruby to be
-installed. If you want to run that locally as well, install Ruby, install
+installed. If you want to run that locally as well, install Ruby and install
 markdown lint with `gem install mdl -v 0.11.0`. Then from `pre-commit`
 change `RUN_MDL=false` to `RUN_MDL=true`. (You need to copy the file again
 into .git/hooks if you did that earlier)

@@ -4,9 +4,10 @@
 # For faster runtime, you can choose subset here
 TOX_ENVS='py37'
 
-# Optionally run ruby based markdown lint locally
-# After installing ruby:
+# Optionally run Ruby based markdown lint locally
+# After installing Ruby run:
 #   gem install mdl -v 0.11.0
+# then you can change this to 'true'.
 RUN_MDL=false
 
 function die(){
