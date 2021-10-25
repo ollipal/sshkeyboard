@@ -8,6 +8,7 @@ any third party libraries or programs.
 For Python 3.7+.
 
 [Documentation](https://sshkeyboard.readthedocs.io)
+[Github](https://github.com/ollipal/sshkeyboard)
 
 ## Quick start
 
@@ -17,8 +18,8 @@ Installation:
 pip install sshkeyboard
 ```
 
-Simple examble to fire events when a key is pressed or released
-`esc` ends listening by default:
+Simple example to fire events when a key is pressed or released.
+`esc` key ends listening by default:
 
 ```python
 from sshkeyboard import listen_keyboard
