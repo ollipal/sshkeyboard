@@ -12,6 +12,7 @@ import traceback
 import tty
 from contextlib import contextmanager
 from inspect import signature
+from platform import system
 from time import time
 from types import SimpleNamespace
 from typing import Any, Callable, Optional
@@ -289,6 +290,14 @@ async def listen_keyboard_async_manual(
 
     global _running
     global _should_run
+    # Check system
+    assert (
+        system().lower() != "windows"
+    ), "sshkeyboard does not support Windows"
+    assert sys.version_info >= (3, 7), (
+        "sshkeyboard requires Python version 3.7+, you have "
+        f"{sys.version_info.major}.{sys.version_info.minor}"
+    )
     # Check the state
     assert not _running, "Only one listener allowed at a time"
     assert (
