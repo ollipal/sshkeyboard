@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.1.1
+
+Readme updates
+
+- Readme, keywords and tags added to pyproject.toml
+- Readme codeblock higlighting fixed
+
 ## 0.1.0
 
 Initial release for testing. Main functionality working but requires more testing.
