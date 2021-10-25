@@ -22,7 +22,7 @@ above 3.7.
 
 Installation:
 
-```
+```text
 pip install sshkeyboard
 ```
 
@@ -43,7 +43,7 @@ listen_keyboard(on_press=press, on_release=release)
 
 Output:
 
-```
+```text
 $ python example.py
 'a' pressed
 'a' released
@@ -91,7 +91,7 @@ listen_keyboard(on_press=press)
 
 and pressing `a`, `s` and `d` keys will log:
 
-```
+```text
 'a' pressed
 's' pressed
 'd' pressed
@@ -110,7 +110,7 @@ listen_keyboard(on_press=press, sequential=True)
 
 will log:
 
-```
+```text
 'a' pressed
 'a' slept
 's' pressed
@@ -125,8 +125,7 @@ You can also use asynchronous functions as `on_press`/`on_release` callbacks
 with `listen_keyboard_async` function.
 
 `listen_keyboard_async` also exposes a new optional parameter `sleep` that can
-be used to change automatic `asyncio.sleep` times between new
-async callbacks.
+be used to change automatic `asyncio.sleep` times between async callbacks.
 
 ```python
 import asyncio
@@ -168,7 +167,7 @@ listen_keyboard_async(on_press=press, on_release=release)
 
 Pressing `a` and `s` will log:
 
-```
+```text
 'a' pressed
 'a' relased
 's' pressed
@@ -188,7 +187,7 @@ listen_keyboard_async(on_press=press, on_release=release, sequential=True)
 
 will log:
 
-```
+```text
 'a' pressed
 'a' press slept
 'a' relased
@@ -284,7 +283,7 @@ or if you just want to try things out.
 
 Start by cloning this library, and change directory to the project root:
 
-```
+```text
 git clone git@github.com:ollipal/sshkeyboard.git
 cd sshkeyboard
 ```
@@ -292,7 +291,7 @@ cd sshkeyboard
 Optionally, create and activate a virtual environment at the root of the
 project (you might need to use `python3` keyword instead of `python`):
 
-```
+```text
 python -m venv .env
 source .env/bin/activate
 ```
@@ -302,7 +301,7 @@ source .env/bin/activate
 To build the documentation or run the pre-commit / pipelines locally, you need
 to install the development dependencies by running:
 
-```
+```text
 pip install -r dev-requirements.txt
 ```
 
@@ -310,13 +309,13 @@ pip install -r dev-requirements.txt
 
 To build the documentation locally, first change into `docs/` directory:
 
-```
+```text
 cd docs
 ```
 
 Then simply call
 
-```
+```text
 make html
 ```
 
@@ -325,7 +324,7 @@ Now you shold have a new `docs/build/` directory, and you can open
 
 You can force the rebuild by running:
 
-```
+```text
 rm -rf build/ && make html
 ```
 
@@ -333,7 +332,7 @@ You can change the documentation content by changing `README.md` or files from
 `src/` or `docs/source/`. If you are mainly changing contents from
 `docs/source/`, you can enable automatic re-building by running:
 
-```
+```text
 sphinx-autobuild ./source/ ./build/html/
 ```
 
@@ -350,15 +349,15 @@ You can run the **tests** (
 [markdownlint](https://github.com/markdownlint/markdownlint)) simply by
 running:
 
-```
+```text
 ./pre-commit
 ```
 
 If you want to automatically run these when you call `git commit`, copy the
 script into `.git/hooks` directory:
 
-```
-cp pre-commit .git/hooks/
+```text
+cp pre-commit .git/hooks
 ```
 
 > **NOTE**: this process does not run `markdownlint` by default as it
