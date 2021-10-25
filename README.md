@@ -2,13 +2,14 @@
 
 The only keyboard event callback  library that works in _all_ unix environments.
 
-This means that it does not depend on X server, uinput, root access (sudo) or
-any third party libraries or programs.
+It does not depend on X server, uinput, root access (sudo) or
+any external libraries or programs.
 
-For Python 3.7+.
+This means it is suitable even when taking a ssh connection to headless Linux
+servers (hence the name) or inside Windows Subsystem for Linux (WSL 2).
 
-[Documentation](https://sshkeyboard.readthedocs.io)
-[Github](https://github.com/ollipal/sshkeyboard)
+For Python versions above 3.7, [Documentation](https://sshkeyboard.readthedocs.io),
+[Github source](https://github.com/ollipal/sshkeyboard)
 
 ## Quick start
 

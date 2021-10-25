@@ -14,6 +14,7 @@ from contextlib import contextmanager
 from inspect import signature
 from time import time
 from types import SimpleNamespace
+from typing import Any, Callable, Optional
 
 # Global state
 
@@ -104,36 +105,54 @@ _CHAR_TO_READABLE = {
 
 
 def listen_keyboard(
-    on_press=None,
-    on_release=None,
-    until="esc",
-    sequental=False,
-    delay_second_char=0.75,
-    delay_others=0.05,
-    lower=True,
-    debug=False,
-    thread_pool_max_workers=None,
-):
+    on_press: Optional[Callable[[str], Any]] = None,
+    on_release: Optional[Callable] = None,
+    until: str = "esc",
+    sequental: bool = False,
+    delay_second_char: float = 0.75,
+    delay_others: float = 0.05,
+    lower: bool = True,
+    debug: bool = False,
+    max_thread_pool_workers: Optional[int] = None,
+) -> None:
     """Listen for keyboard events and fire callback functions
 
+    Blocks the thread until the key in `until` parameter has been pressed, an
+    error has been raised or :func:`~sshkeyboard.stop_listening` has been
+    called.
+
+    Example:
+
+    .. code-block:: python
+
+        from sshkeyboard import listen_keyboard
+
+        def press(key):
+            print(f"'{key}' pressed")
+
+        listen_keyboard(on_press=press)
+
     Args:
-        on_press (function, optional): function that gets called when key gets
-            pressed. Defaults to None.
-        on_release (function, optional): function that gets called when key
-            gets released. Defaults to None.
-        until (str, optional): a key that will end keyboard listening.
-            Defaults to "esc".
-        sequental (bool, optional): defines whether callback can be started
-            while the previous is still running. Defaults to False.
-        delay_second_char (float, optional): The timeout that depends on
-            terminal. Defaults to 0.75.
-        delay_others (float, optional): Another timeoput. Defaults to 0.05.
-        lower (bool, optional): whether the callback 'key' parameter gets
-            turned intop lower key or not. Defaults to True.
-        debug (bool, optional): print debug messages. Defaults to False.
-        thread_pool_max_workers (None|int, optional): Define the number of
-            ThreadPoolWrokers, None means that a default value will get used.
-            Defaults to None.
+        on_press: Function that gets called when a key is pressed. The
+            function takes the pressed key as parameter. Defaults to None.
+        on_release: Function that gets called when a key is released. The
+            function takes the released key as parameter. Defaults to None.
+        until: A key that will end keyboard listening. Defaults to "esc".
+        sequental: If enabled, callbacks will be forced to happen one by
+            one instead of concurrently. Defaults to False.
+        delay_second_char: The timeout between first and second character when
+            holding down a key. Depends on terminal and is used for parsing
+            the input. Defaults to 0.75.
+        delay_others: The timeout between all other characters when holding
+            down a key. Depends on terminal and is used for parsing the input.
+            Defaults to 0.05.
+        lower: If enabled, the callback 'key' parameter gets turned into lower
+            case key even if it was upper case, for example "A" -> "a".
+            Defaults to True.
+        debug: Print debug messages. Defaults to False.
+        max_thread_pool_workers: Define the number of workers in
+            ThreadPoolExecutor, None means that a default value will get used.
+            Will get ignored if sequental=True. Defaults to None.
     """
 
     assert not asyncio.iscoroutinefunction(
@@ -153,24 +172,72 @@ def listen_keyboard(
             delay_others,
             lower,
             debug,
-            thread_pool_max_workers,
+            max_thread_pool_workers,
             sleep=None,
         )
     )
 
 
 def listen_keyboard_async(
-    on_press=None,
-    on_release=None,
-    until="esc",
-    sequental=False,
-    delay_second_char=0.75,
-    delay_others=0.05,
-    lower=True,
-    debug=False,
-    thread_pool_max_workers=None,
-    sleep=0.05,
-):
+    on_press: Optional[Callable[[str], Any]] = None,
+    on_release: Optional[Callable] = None,
+    until: str = "esc",
+    sequental: bool = False,
+    delay_second_char: float = 0.75,
+    delay_others: float = 0.05,
+    lower: bool = True,
+    debug: bool = False,
+    max_thread_pool_workers: Optional[int] = None,
+    sleep: float = 0.05,
+) -> None:
+    """The same as :func:`~sshkeyboard.listen_keyboard`, but now the callbacks are
+    allowed to be asynchronous
+
+    New parameter `sleep` defines a timeout between starting the
+    callbacks.
+
+    For asynchronous callback parameter `sequental` defines
+    whether they are awaited or not before starting the next one
+
+    Example:
+
+    .. code-block:: python
+
+        from sshkeyboard import listen_keyboard_async
+
+        async def press(key):
+            print(f"'{key}' pressed")
+
+        listen_keyboard_async(on_press=press)
+
+    Has the same parameters as :func:`~sshkeyboard.listen_keyboard`,
+    except for the new `sleep` parameter
+
+    Args:
+        on_press: Function that gets called when a key is pressed. The
+            function takes the pressed key as parameter. Defaults to None.
+        on_release: Function that gets called when a key is released. The
+            function takes the released key as parameter. Defaults to None.
+        until: A key that will end keyboard listening. Defaults to "esc".
+        sequental: If enabled, callbacks will be forced to happen one by
+            one instead of concurrently. Defaults to False.
+        delay_second_char: The timeout between first and second character when
+            holding down a key. Depends on terminal and is used for parsing
+            the input. Defaults to 0.75.
+        delay_others: The timeout between all other characters when holding
+            down a key. Depends on terminal and is used for parsing the input.
+            Defaults to 0.05.
+        lower: If enabled, the callback 'key' parameter gets turned into lower
+            case key even if it was upper case, for example "A" -> "a".
+            Defaults to True.
+        debug: Print debug messages. Defaults to False.
+        max_thread_pool_workers: Define the number of workers in
+            ThreadPoolExecutor, None means that a default value will get used.
+            Will get ignored if sequental=True. Defaults to None.
+        sleep: asyncio.sleep() amount between starting the callbacks. None
+            will remove the sleep altogether. Defaults to 0.05.
+    """
+
     asyncio.run(
         listen_keyboard_async_manual(
             on_press,
@@ -181,24 +248,44 @@ def listen_keyboard_async(
             delay_others,
             lower,
             debug,
-            thread_pool_max_workers,
+            max_thread_pool_workers,
             sleep,
         )
     )
 
 
 async def listen_keyboard_async_manual(
-    on_press=None,
-    on_release=None,
-    until="esc",
-    sequental=False,
-    delay_second_char=0.75,
-    delay_others=0.05,
-    lower=True,
-    debug=False,
-    thread_pool_max_workers=None,
-    sleep=0.05,
-):
+    on_press: Optional[Callable[[str], Any]] = None,
+    on_release: Optional[Callable] = None,
+    until: str = "esc",
+    sequental: bool = False,
+    delay_second_char: float = 0.75,
+    delay_others: float = 0.05,
+    lower: bool = True,
+    debug: bool = False,
+    max_thread_pool_workers: Optional[int] = None,
+    sleep: float = 0.05,
+) -> None:
+    """The same as :func:`~sshkeyboard.listen_keyboard_async`, but now the
+    awaiting must be handled by the caller
+
+    .. code-block:: python
+
+        from sshkeyboard import listen_keyboard_async_manual
+        # ...
+        asyncio.run(listen_keyboard_async_manual(...))
+
+    is the same as
+
+    .. code-block:: python
+
+        from sshkeyboard import listen_keyboard_async
+        # ...
+        listen_keyboard_async(...)
+
+    Has the same parameters as :func:`~sshkeyboard.listen_keyboard_async`
+    """
+
     global _running
     global _should_run
     assert not _running, "Only one listener allowed at a time"
@@ -226,11 +313,12 @@ async def listen_keyboard_async_manual(
 
     # Create thread pool executor only if it will get used
     executor = None
-    if not asyncio.iscoroutinefunction(
-        on_press
-    ) or not asyncio.iscoroutinefunction(on_release):
+    if not sequental and (
+        not asyncio.iscoroutinefunction(on_press)
+        or not asyncio.iscoroutinefunction(on_release)
+    ):
         executor = concurrent.futures.ThreadPoolExecutor(
-            max_workers=thread_pool_max_workers
+            max_workers=max_thread_pool_workers
         )
 
     # Package parameters into namespaces so they are easier to pass around
@@ -266,9 +354,15 @@ async def listen_keyboard_async_manual(
     _should_run = True
 
 
-def stop_listening():
-    global _should_run
-    _should_run = False
+def stop_listening() -> None:
+    """Stops the ongoing keyboard listeners
+
+    Can be called inside the callbacks or from outside. Does not do anything
+    if listener is not running.
+    """
+    if _running:
+        global _should_run
+        _should_run = False
 
 
 def _takes_at_least_one_param(function):
