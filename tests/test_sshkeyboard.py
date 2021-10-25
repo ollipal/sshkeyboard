@@ -1,5 +1,7 @@
 from contextlib import contextmanager
 
+import pytest
+
 import sshkeyboard
 
 i = -1
@@ -30,6 +32,10 @@ setup_testing()
 
 def empty(key):
     pass
+
+
+def stops(key):
+    sshkeyboard.stop_listening()
 
 
 def returns_char(key):
@@ -76,6 +82,37 @@ def test_multiple_listens_raises_error():
     sshkeyboard.listen_keyboard_async(press_listen, empty)
     # listen_keyboard_async inside listen_keyboard_async fails
     sshkeyboard.listen_keyboard_async(press_listen_async, empty)
+
+
+def test_callback_parameters():
+    def too_many_params_without_default(key, key2):
+        pass
+
+    def no_params():
+        pass
+
+    def ok1(key):
+        pass
+
+    def ok2(custom_key_name):
+        pass
+
+    def ok3(key="a"):
+        pass
+
+    def ok4(key="a", key2="s"):
+        pass
+
+    with pytest.raises(AssertionError):
+        sshkeyboard.listen_keyboard(too_many_params_without_default, stops)
+
+    with pytest.raises(AssertionError):
+        sshkeyboard.listen_keyboard(no_params, stops)
+
+    sshkeyboard.listen_keyboard(ok1, stops)
+    sshkeyboard.listen_keyboard(ok2, stops)
+    sshkeyboard.listen_keyboard(ok3, stops)
+    sshkeyboard.listen_keyboard(ok4, stops)
 
 
 # TODO, assert async fails listen, test sleeps,

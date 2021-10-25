@@ -11,6 +11,7 @@ import termios
 import traceback
 import tty
 from contextlib import contextmanager
+from inspect import signature
 from time import time
 from types import SimpleNamespace
 
@@ -205,6 +206,20 @@ async def listen_keyboard_async_manual(
     assert (
         on_press is not None or on_release is not None
     ), "Either on_press or on_release should be defined"
+    assert on_press is None or _takes_at_least_one_param(
+        on_press
+    ), "on_press must take at least one parameter"
+    assert on_press is None or _max_one_param_without_default(on_press), (
+        "on_press must have one or zero parameters without a default value,"
+        f"now takes more: {_default_empty_params(on_press)}"
+    )
+    assert on_release is None or _takes_at_least_one_param(
+        on_release
+    ), "on_release must take at least one parameter"
+    assert on_release is None or _max_one_param_without_default(on_release), (
+        "on_release must have one or zero parameters without a default value,"
+        f"now takes more: {_default_empty_params(on_release)}"
+    )
 
     _running = True
     _should_run = True
@@ -218,38 +233,11 @@ async def listen_keyboard_async_manual(
             max_workers=thread_pool_max_workers
         )
 
-    def done(task):
-        if not task.cancelled() and task.exception() is not None:
-            ex = task.exception()
-            traceback.print_exception(type(ex), ex, ex.__traceback__)
-            global _should_run
-            _should_run = False
-
-    def callback(cb_function):
-        async def _callback(key):
-            if cb_function is None:
-                return
-
-            if sequental:
-                if asyncio.iscoroutinefunction(cb_function):
-                    await cb_function(key)
-                else:
-                    cb_function(key)
-            else:
-                if asyncio.iscoroutinefunction(cb_function):
-                    task = asyncio.create_task(cb_function(key))
-                    task.add_done_callback(done)
-                else:
-                    future = executor.submit(cb_function, key)
-                    future.add_done_callback(done)
-
-        return _callback
-
     # Package parameters into namespaces so they are easier to pass around
     # Options do not change
     options = SimpleNamespace(
-        on_press_callback=callback(on_press),
-        on_release_callback=callback(on_release),
+        on_press_callback=_callback(on_press, sequental, executor),
+        on_release_callback=_callback(on_release, sequental, executor),
         until=until,
         delay_second_char=delay_second_char,
         delay_others=delay_others,
@@ -281,6 +269,57 @@ async def listen_keyboard_async_manual(
 def stop_listening():
     global _should_run
     _should_run = False
+
+
+def _takes_at_least_one_param(function):
+    sig = signature(function)
+    return len(sig.parameters.values()) >= 1
+
+
+def _default_empty_params(function):
+    sig = signature(function)
+    return tuple(
+        param.name
+        for param in sig.parameters.values()
+        if (
+            param.kind == param.POSITIONAL_OR_KEYWORD
+            and param.default is param.empty
+        )
+    )
+
+
+def _max_one_param_without_default(function):
+    default_empty_params = _default_empty_params(function)
+    return len(default_empty_params) <= 1
+
+
+def _done(task):
+    if not task.cancelled() and task.exception() is not None:
+        ex = task.exception()
+        traceback.print_exception(type(ex), ex, ex.__traceback__)
+        global _should_run
+        _should_run = False
+
+
+def _callback(cb_function, sequental, executor):
+    async def _cb(key):
+        if cb_function is None:
+            return
+
+        if sequental:
+            if asyncio.iscoroutinefunction(cb_function):
+                await cb_function(key)
+            else:
+                cb_function(key)
+        else:
+            if asyncio.iscoroutinefunction(cb_function):
+                task = asyncio.create_task(cb_function(key))
+                task.add_done_callback(_done)
+            else:
+                future = executor.submit(cb_function, key)
+                future.add_done_callback(_done)
+
+    return _cb
 
 
 # Raw and _nonblocking inspiration from:
