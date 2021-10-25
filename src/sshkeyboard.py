@@ -23,7 +23,7 @@ _running = False
 # Makes sure listener stops if error has been raised
 # inside thread pool executor or asyncio task or
 # stop_listening() has been called
-_should_run = True
+_should_run = False
 
 # All possible characters here:
 # https://github.com/prompt-toolkit/python-prompt-toolkit/blob/master/prompt_toolkit/input/ansi_escape_sequences.py
@@ -97,6 +97,7 @@ _ANSI_CHAR_TO_READABLE = {
     "\x1b[24;2~": "f24",
 }
 
+# Some non-ansi characters that need a better representation
 _CHAR_TO_READABLE = {
     "\t": "tab",
     "\n": "enter",
@@ -106,7 +107,7 @@ _CHAR_TO_READABLE = {
 
 def listen_keyboard(
     on_press: Optional[Callable[[str], Any]] = None,
-    on_release: Optional[Callable] = None,
+    on_release: Optional[Callable[[str], Any]] = None,
     until: str = "esc",
     sequental: bool = False,
     delay_second_char: float = 0.75,
@@ -115,7 +116,8 @@ def listen_keyboard(
     debug: bool = False,
     max_thread_pool_workers: Optional[int] = None,
 ) -> None:
-    """Listen for keyboard events and fire callback functions
+    """Listen for keyboard events and fire `on_press` and `on_release` callback
+    functions
 
     Blocks the thread until the key in `until` parameter has been pressed, an
     error has been raised or :func:`~sshkeyboard.stop_listening` has been
@@ -180,7 +182,7 @@ def listen_keyboard(
 
 def listen_keyboard_async(
     on_press: Optional[Callable[[str], Any]] = None,
-    on_release: Optional[Callable] = None,
+    on_release: Optional[Callable[[str], Any]] = None,
     until: str = "esc",
     sequental: bool = False,
     delay_second_char: float = 0.75,
@@ -190,14 +192,15 @@ def listen_keyboard_async(
     max_thread_pool_workers: Optional[int] = None,
     sleep: float = 0.05,
 ) -> None:
-    """The same as :func:`~sshkeyboard.listen_keyboard`, but now the callbacks are
-    allowed to be asynchronous
+    """The same function as :func:`~sshkeyboard.listen_keyboard`, but now the
+    on_press and on_release callbacks are allowed to be asynchronous, and
+    has a new `sleep` parameter
 
-    New parameter `sleep` defines a timeout between starting the
+    The new parameter `sleep` defines a timeout between starting the
     callbacks.
 
-    For asynchronous callback parameter `sequental` defines
-    whether they are awaited or not before starting the next one
+    For the asynchronous callbacks, parameter `sequental` defines whether a
+    callback is awaited or not before starting the next callback.
 
     Example:
 
@@ -209,9 +212,6 @@ def listen_keyboard_async(
             print(f"'{key}' pressed")
 
         listen_keyboard_async(on_press=press)
-
-    Has the same parameters as :func:`~sshkeyboard.listen_keyboard`,
-    except for the new `sleep` parameter
 
     Args:
         on_press: Function that gets called when a key is pressed. The
@@ -256,7 +256,7 @@ def listen_keyboard_async(
 
 async def listen_keyboard_async_manual(
     on_press: Optional[Callable[[str], Any]] = None,
-    on_release: Optional[Callable] = None,
+    on_release: Optional[Callable[[str], Any]] = None,
     until: str = "esc",
     sequental: bool = False,
     delay_second_char: float = 0.75,
@@ -264,7 +264,7 @@ async def listen_keyboard_async_manual(
     lower: bool = True,
     debug: bool = False,
     max_thread_pool_workers: Optional[int] = None,
-    sleep: float = 0.05,
+    sleep: Optional[float] = 0.05,
 ) -> None:
     """The same as :func:`~sshkeyboard.listen_keyboard_async`, but now the
     awaiting must be handled by the caller
@@ -288,25 +288,33 @@ async def listen_keyboard_async_manual(
 
     global _running
     global _should_run
+    # Check the state
     assert not _running, "Only one listener allowed at a time"
-    assert _should_run, "Should not have errors in the beginning already"
+    assert (
+        not _should_run
+    ), "Should have ended listening properly the last time"
+    # Check the parameters
     assert (
         on_press is not None or on_release is not None
     ), "Either on_press or on_release should be defined"
-    assert on_press is None or _takes_at_least_one_param(
-        on_press
-    ), "on_press must take at least one parameter"
-    assert on_press is None or _max_one_param_without_default(on_press), (
-        "on_press must have one or zero parameters without a default value,"
-        f"now takes more: {_default_empty_params(on_press)}"
-    )
-    assert on_release is None or _takes_at_least_one_param(
-        on_release
-    ), "on_release must take at least one parameter"
-    assert on_release is None or _max_one_param_without_default(on_release), (
-        "on_release must have one or zero parameters without a default value,"
-        f"now takes more: {_default_empty_params(on_release)}"
-    )
+    _check_callback_ok(on_press, "on_press")
+    _check_callback_ok(on_release, "on_release")
+    assert isinstance(until, str), "'until' has to be a string"
+    assert isinstance(sequental, bool), "'sequental' has to be boolean"
+    assert isinstance(
+        delay_second_char, (int, float)
+    ), "'delay_second_char' has to be numeric"
+    assert isinstance(
+        delay_others, (int, float)
+    ), "'delay_others' has to be numeric"
+    assert isinstance(lower, bool), "'lower' has to be boolean"
+    assert isinstance(debug, bool), "'debug' has to be boolean"
+    assert max_thread_pool_workers is None or isinstance(
+        max_thread_pool_workers, int
+    ), "'max_thread_pool_workers' has to be None or int"
+    assert sleep is None or isinstance(
+        sleep, (int, float)
+    ), "'sleep' has to be None or numeric"
 
     _running = True
     _should_run = True
@@ -351,7 +359,7 @@ async def listen_keyboard_async_manual(
     if executor is not None:
         executor.shutdown()
     _running = False
-    _should_run = True
+    _should_run = False
 
 
 def stop_listening() -> None:
@@ -363,6 +371,18 @@ def stop_listening() -> None:
     if _running:
         global _should_run
         _should_run = False
+
+
+def _check_callback_ok(function, name):
+    if function is not None:
+        assert callable(function), f"{name} must be None or callable"
+        assert _takes_at_least_one_param(
+            function
+        ), f"{name} must take at least one parameter"
+        assert _max_one_param_without_default(function), (
+            f"{name} must have one or zero parameters without a default "
+            f"value, now takes more: {_default_empty_params(function)}"
+        )
 
 
 def _takes_at_least_one_param(function):
