@@ -2,6 +2,7 @@
 ```
 
 ### Other pages
+
 ```{toctree}
 :maxdepth: 2
 

@@ -25,7 +25,8 @@ _running = False
 # stop_listening() has been called
 _should_run = False
 
-# All possible characters here:
+# Readable representations for selected ansi characters
+# All possible ansi characters here:
 # https://github.com/prompt-toolkit/python-prompt-toolkit/blob/master/prompt_toolkit/input/ansi_escape_sequences.py
 # Listener does not support modifier keys for now
 _ANSI_CHAR_TO_READABLE = {
@@ -97,7 +98,7 @@ _ANSI_CHAR_TO_READABLE = {
     "\x1b[24;2~": "f24",
 }
 
-# Some non-ansi characters that need a better representation
+# Some non-ansi characters that need a readable representation
 _CHAR_TO_READABLE = {
     "\t": "tab",
     "\n": "enter",
@@ -115,7 +116,7 @@ def listen_keyboard(
     lower: bool = True,
     debug: bool = False,
     max_thread_pool_workers: Optional[int] = None,
-) -> None:
+):
     """Listen for keyboard events and fire `on_press` and `on_release` callback
     functions
 
@@ -159,10 +160,10 @@ def listen_keyboard(
 
     assert not asyncio.iscoroutinefunction(
         on_press
-    ), "Use listen_keyboard_async if you have async on_press"
+    ), "Use listen_keyboard_async instead if you have async on_press"
     assert not asyncio.iscoroutinefunction(
         on_release
-    ), "Use listen_keyboard_async if you have async on_release"
+    ), "Use listen_keyboard_async instead if you have async on_release"
 
     asyncio.run(
         listen_keyboard_async_manual(
@@ -191,7 +192,7 @@ def listen_keyboard_async(
     debug: bool = False,
     max_thread_pool_workers: Optional[int] = None,
     sleep: float = 0.05,
-) -> None:
+):
     """The same function as :func:`~sshkeyboard.listen_keyboard`, but now the
     on_press and on_release callbacks are allowed to be asynchronous, and
     has a new `sleep` parameter
@@ -265,7 +266,7 @@ async def listen_keyboard_async_manual(
     debug: bool = False,
     max_thread_pool_workers: Optional[int] = None,
     sleep: Optional[float] = 0.05,
-) -> None:
+):
     """The same as :func:`~sshkeyboard.listen_keyboard_async`, but now the
     awaiting must be handled by the caller
 
@@ -362,7 +363,7 @@ async def listen_keyboard_async_manual(
     _should_run = False
 
 
-def stop_listening() -> None:
+def stop_listening():
     """Stops the ongoing keyboard listeners
 
     Can be called inside the callbacks or from outside. Does not do anything
@@ -547,14 +548,11 @@ if __name__ == "__main__":
         print(f"'{key}' released")
 
     # Sync version
-    print("listening_keyboard() running, press keys, and press 'esc' to exit")
+    print("listening_keyboard(), press keys, and press 'esc' to exit")
     listen_keyboard(on_press=press, on_release=release)
 
     # Async version
-    print(
-        "\nlistening_keyboard_async() running, press keys,"
-        "and press 'esc' to exit"
-    )
+    print("\nlistening_keyboard_async(), press keys,and press 'esc' to exit")
     listen_keyboard_async(on_press=press, on_release=release)
     # ^this is the same as
     # asyncio.run(listen_keyboard_async_manual(press, release))
