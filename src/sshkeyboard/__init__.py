@@ -17,6 +17,11 @@ from time import time
 from types import SimpleNamespace
 from typing import Any, Callable, Optional
 
+try:
+    from ._asyncio_run_backport_36 import run36
+except ImportError:  # this allows local testing: python __init__.py
+    from _asyncio_run_backport_36 import run36
+
 # Global state
 
 # Makes sure only listener can be started at a time
@@ -166,20 +171,23 @@ def listen_keyboard(
         on_release
     ), "Use listen_keyboard_async instead if you have async on_release"
 
-    asyncio.run(
-        listen_keyboard_async_manual(
-            on_press,
-            on_release,
-            until,
-            sequential,
-            delay_second_char,
-            delay_other_chars,
-            lower,
-            debug,
-            max_thread_pool_workers,
-            sleep=None,
-        )
+    coro = listen_keyboard_async_manual(
+        on_press,
+        on_release,
+        until,
+        sequential,
+        delay_second_char,
+        delay_other_chars,
+        lower,
+        debug,
+        max_thread_pool_workers,
+        sleep=None,
     )
+
+    if _is_python_36:
+        run36(coro)
+    else:
+        asyncio.run(coro)
 
 
 def listen_keyboard_async(
@@ -240,20 +248,23 @@ def listen_keyboard_async(
             will remove the sleep altogether. Defaults to 0.05.
     """
 
-    asyncio.run(
-        listen_keyboard_async_manual(
-            on_press,
-            on_release,
-            until,
-            sequential,
-            delay_second_char,
-            delay_other_chars,
-            lower,
-            debug,
-            max_thread_pool_workers,
-            sleep,
-        )
+    coro = listen_keyboard_async_manual(
+        on_press,
+        on_release,
+        until,
+        sequential,
+        delay_second_char,
+        delay_other_chars,
+        lower,
+        debug,
+        max_thread_pool_workers,
+        sleep,
     )
+
+    if _is_python_36:
+        run36(coro)
+    else:
+        asyncio.run(coro)
 
 
 async def listen_keyboard_async_manual(
@@ -285,6 +296,9 @@ async def listen_keyboard_async_manual(
         # ...
         listen_keyboard_async(...)
 
+    (Python version 3.6 which does not have `asyncio.run` is handled
+    differently internally)
+
     Has the same parameters as :func:`~sshkeyboard.listen_keyboard_async`
     """
 
@@ -294,8 +308,8 @@ async def listen_keyboard_async_manual(
     assert (
         system().lower() != "windows"
     ), "sshkeyboard does not support Windows"
-    assert sys.version_info >= (3, 7), (
-        "sshkeyboard requires Python version 3.7+, you have "
+    assert sys.version_info >= (3, 6), (
+        "sshkeyboard requires Python version 3.6+, you have "
         f"{sys.version_info.major}.{sys.version_info.minor}"
     )
     # Check the state
@@ -381,6 +395,10 @@ def stop_listening():
     if _running:
         global _should_run
         _should_run = False
+
+
+def _is_python_36():
+    return sys.version_info.major == 3 and sys.version_info.minor == 6
 
 
 def _check_callback_ok(function, name):

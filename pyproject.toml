@@ -12,7 +12,7 @@ classifiers = [
     "Topic :: Software Development :: Libraries :: Python Modules",
 ]
 readme = "README.md"
-requires-python = ">=3.7"
+requires-python = ">=3.6"
 dynamic = ["version", "description"]
 keywords = ["keyboard", "ssh", "callback", "headless", "wsl", "x server", "uinput"]
 
@@ -23,7 +23,7 @@ Home = "https://github.com/ollipal/sshkeyboard"
 legacy_tox_ini = """
 [tox]
 isolated_build = True
-envlist = py37, py38, py39, py310
+envlist = py36, py37, py38, py39, py310
 
 [testenv]
 deps =

@@ -11,7 +11,7 @@ using with headless computers/servers or for example inside Windows Subsystem
 for Linux (WSL 2). One good use case is Raspberry Pi with Raspberry
 Pi OS Lite.
 
-Supports asyncio and sequential/concurrent callback modes. For Python 3.7+.
+Supports asyncio and sequential/concurrent callback modes. For Python 3.6+.
 
 [Documentation](https://sshkeyboard.readthedocs.io)  
 [Reference](https://sshkeyboard.readthedocs.io/en/latest/reference.html)  
