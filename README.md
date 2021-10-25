@@ -11,7 +11,7 @@ using with headless computers/servers or for example inside Windows Subsystem
 for Linux (WSL 2). One good use case is Raspberry Pi with Raspberry
 Pi OS Lite.
 
-Supports asyncio and sequental/concurrent callback modes. For Python versions
+Supports asyncio and sequential/concurrent callback modes. For Python versions
 above 3.7.
 
 [Documentation](https://sshkeyboard.readthedocs.io)  
@@ -72,7 +72,7 @@ with some **limitations**, mainly:
 
 ## Advanced use
 
-### Sequental mode
+### Sequential mode
 
 Normally this library allows `on_press` and `on_release` callback to be run
 concurrently. This means that by running:
@@ -101,11 +101,11 @@ and pressing `a`, `s` and `d` keys will log:
 ```
 
 But sometimes you don't want to allow the callbacks to overlap, then
-you should set `sequental` parameter to `True`:
+you should set `sequential` parameter to `True`:
 
 ```python
 # ...
-listen_keyboard(on_press=press, sequental=True)
+listen_keyboard(on_press=press, sequential=True)
 ```
 
 will log:
@@ -179,11 +179,11 @@ Pressing `a` and `s` will log:
 's' release slept
 ```
 
-And with `sequental=True`:
+And with `sequential=True`:
 
 ```python
 # ...
-listen_keyboard_async(on_press=press, on_release=release, sequental=True)
+listen_keyboard_async(on_press=press, on_release=release, sequential=True)
 ```
 
 will log:
@@ -240,7 +240,7 @@ you can try to tweak the default timing parameters:
 
 ```python
 # ...
-listen_keyboard(on_press=press, delay_second_char=0.75, delay_others=0.05)
+listen_keyboard(on_press=press, delay_second_char=0.75, delay_other_chars=0.05)
 ```
 
 ### More

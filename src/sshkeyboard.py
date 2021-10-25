@@ -1,6 +1,6 @@
 """sshkeyboard"""
 
-__version__ = "0.0.1"
+__version__ = "0.1.0"
 
 import asyncio
 import concurrent.futures
@@ -110,9 +110,9 @@ def listen_keyboard(
     on_press: Optional[Callable[[str], Any]] = None,
     on_release: Optional[Callable[[str], Any]] = None,
     until: str = "esc",
-    sequental: bool = False,
+    sequential: bool = False,
     delay_second_char: float = 0.75,
-    delay_others: float = 0.05,
+    delay_other_chars: float = 0.05,
     lower: bool = True,
     debug: bool = False,
     max_thread_pool_workers: Optional[int] = None,
@@ -141,21 +141,21 @@ def listen_keyboard(
         on_release: Function that gets called when a key is released. The
             function takes the released key as parameter. Defaults to None.
         until: A key that will end keyboard listening. Defaults to "esc".
-        sequental: If enabled, callbacks will be forced to happen one by
+        sequential: If enabled, callbacks will be forced to happen one by
             one instead of concurrently. Defaults to False.
         delay_second_char: The timeout between first and second character when
             holding down a key. Depends on terminal and is used for parsing
             the input. Defaults to 0.75.
-        delay_others: The timeout between all other characters when holding
-            down a key. Depends on terminal and is used for parsing the input.
-            Defaults to 0.05.
+        delay_other_chars: The timeout between all other characters when
+            holding down a key. Depends on terminal and is used for parsing
+            the input. Defaults to 0.05.
         lower: If enabled, the callback 'key' parameter gets turned into lower
             case key even if it was upper case, for example "A" -> "a".
             Defaults to True.
         debug: Print debug messages. Defaults to False.
         max_thread_pool_workers: Define the number of workers in
             ThreadPoolExecutor, None means that a default value will get used.
-            Will get ignored if sequental=True. Defaults to None.
+            Will get ignored if sequential=True. Defaults to None.
     """
 
     assert not asyncio.iscoroutinefunction(
@@ -170,9 +170,9 @@ def listen_keyboard(
             on_press,
             on_release,
             until,
-            sequental,
+            sequential,
             delay_second_char,
-            delay_others,
+            delay_other_chars,
             lower,
             debug,
             max_thread_pool_workers,
@@ -185,9 +185,9 @@ def listen_keyboard_async(
     on_press: Optional[Callable[[str], Any]] = None,
     on_release: Optional[Callable[[str], Any]] = None,
     until: str = "esc",
-    sequental: bool = False,
+    sequential: bool = False,
     delay_second_char: float = 0.75,
-    delay_others: float = 0.05,
+    delay_other_chars: float = 0.05,
     lower: bool = True,
     debug: bool = False,
     max_thread_pool_workers: Optional[int] = None,
@@ -200,7 +200,7 @@ def listen_keyboard_async(
     The new parameter `sleep` defines a timeout between starting the
     callbacks.
 
-    For the asynchronous callbacks, parameter `sequental` defines whether a
+    For the asynchronous callbacks, parameter `sequential` defines whether a
     callback is awaited or not before starting the next callback.
 
     Example:
@@ -220,21 +220,21 @@ def listen_keyboard_async(
         on_release: Function that gets called when a key is released. The
             function takes the released key as parameter. Defaults to None.
         until: A key that will end keyboard listening. Defaults to "esc".
-        sequental: If enabled, callbacks will be forced to happen one by
+        sequential: If enabled, callbacks will be forced to happen one by
             one instead of concurrently. Defaults to False.
         delay_second_char: The timeout between first and second character when
             holding down a key. Depends on terminal and is used for parsing
             the input. Defaults to 0.75.
-        delay_others: The timeout between all other characters when holding
-            down a key. Depends on terminal and is used for parsing the input.
-            Defaults to 0.05.
+        delay_other_chars: The timeout between all other characters when
+            holding down a key. Depends on terminal and is used for parsing
+            the input. Defaults to 0.05.
         lower: If enabled, the callback 'key' parameter gets turned into lower
             case key even if it was upper case, for example "A" -> "a".
             Defaults to True.
         debug: Print debug messages. Defaults to False.
         max_thread_pool_workers: Define the number of workers in
             ThreadPoolExecutor, None means that a default value will get used.
-            Will get ignored if sequental=True. Defaults to None.
+            Will get ignored if sequential=True. Defaults to None.
         sleep: asyncio.sleep() amount between starting the callbacks. None
             will remove the sleep altogether. Defaults to 0.05.
     """
@@ -244,9 +244,9 @@ def listen_keyboard_async(
             on_press,
             on_release,
             until,
-            sequental,
+            sequential,
             delay_second_char,
-            delay_others,
+            delay_other_chars,
             lower,
             debug,
             max_thread_pool_workers,
@@ -259,9 +259,9 @@ async def listen_keyboard_async_manual(
     on_press: Optional[Callable[[str], Any]] = None,
     on_release: Optional[Callable[[str], Any]] = None,
     until: str = "esc",
-    sequental: bool = False,
+    sequential: bool = False,
     delay_second_char: float = 0.75,
-    delay_others: float = 0.05,
+    delay_other_chars: float = 0.05,
     lower: bool = True,
     debug: bool = False,
     max_thread_pool_workers: Optional[int] = None,
@@ -301,13 +301,13 @@ async def listen_keyboard_async_manual(
     _check_callback_ok(on_press, "on_press")
     _check_callback_ok(on_release, "on_release")
     assert isinstance(until, str), "'until' has to be a string"
-    assert isinstance(sequental, bool), "'sequental' has to be boolean"
+    assert isinstance(sequential, bool), "'sequential' has to be boolean"
     assert isinstance(
         delay_second_char, (int, float)
     ), "'delay_second_char' has to be numeric"
     assert isinstance(
-        delay_others, (int, float)
-    ), "'delay_others' has to be numeric"
+        delay_other_chars, (int, float)
+    ), "'delay_other_chars' has to be numeric"
     assert isinstance(lower, bool), "'lower' has to be boolean"
     assert isinstance(debug, bool), "'debug' has to be boolean"
     assert max_thread_pool_workers is None or isinstance(
@@ -322,7 +322,7 @@ async def listen_keyboard_async_manual(
 
     # Create thread pool executor only if it will get used
     executor = None
-    if not sequental and (
+    if not sequential and (
         not asyncio.iscoroutinefunction(on_press)
         or not asyncio.iscoroutinefunction(on_release)
     ):
@@ -333,11 +333,11 @@ async def listen_keyboard_async_manual(
     # Package parameters into namespaces so they are easier to pass around
     # Options do not change
     options = SimpleNamespace(
-        on_press_callback=_callback(on_press, sequental, executor),
-        on_release_callback=_callback(on_release, sequental, executor),
+        on_press_callback=_callback(on_press, sequential, executor),
+        on_release_callback=_callback(on_release, sequential, executor),
         until=until,
         delay_second_char=delay_second_char,
-        delay_others=delay_others,
+        delay_other_chars=delay_other_chars,
         lower=lower,
         debug=debug,
     )
@@ -416,12 +416,12 @@ def _done(task):
         _should_run = False
 
 
-def _callback(cb_function, sequental, executor):
+def _callback(cb_function, sequential, executor):
     async def _cb(key):
         if cb_function is None:
             return
 
-        if sequental:
+        if sequential:
             if asyncio.iscoroutinefunction(cb_function):
                 await cb_function(key)
             else:
@@ -531,7 +531,7 @@ async def _react_to_input(state, options):
     # - The second character comes slower than the rest on terminal
     elif state.previous != "" and (
         time() - state.initial_press_time > options.delay_second_char
-        and time() - state.press_time > options.delay_others
+        and time() - state.press_time > options.delay_other_chars
     ):
         await options.on_release_callback(state.previous)
         state.previous = state.current

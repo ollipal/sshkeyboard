@@ -115,5 +115,4 @@ def test_callback_parameters():
     sshkeyboard.listen_keyboard(ok4, stops)
 
 
-# TODO, assert async fails listen, test sleeps,
-# schedule orders, throwing errors etc.
+# TODO add tests for: sleeps and print orders, throwing errors, assertions
