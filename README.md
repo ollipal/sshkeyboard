@@ -15,8 +15,9 @@ Supports asyncio and sequential/concurrent callback modes. For Python versions
 above 3.7.
 
 [Documentation](https://sshkeyboard.readthedocs.io)  
+[Reference](https://sshkeyboard.readthedocs.io/en/latest/reference.html)  
 [Github source](https://github.com/ollipal/sshkeyboard)  
-[Reference](https://sshkeyboard.readthedocs.io/en/latest/reference.html)
+[PyPI](https://pypi.org/project/sshkeyboard/)
 
 ## Quick start
 
@@ -252,22 +253,6 @@ for more functions and  parameters:
 - `max_thread_pool_workers` parameter
 - `listen_keyboard_async_manual` function
 
-## Comparison to other Python keyboard libraries
-
-Some other keyboard libraries work by reading proper keycodes from the system.
-
-This means that they usually require either `X server` or `uinput`, so they do
-not work over SSH. But this means they do not have the same limitations as
-this library.
-
-They also support more features such as pressing the keys instead of just
-reacting to user input.
-
-I have good experiences from:
-
-- [pynput](https://pynput.readthedocs.io/en/latest/)
-- [boppreh/keyboard](https://github.com/boppreh/keyboard) (requires sudo!)
-
 ## Development
 
 In this section I'll explain how to build the documentation and run the
@@ -336,7 +321,7 @@ You can change the documentation content by changing `README.md` or files from
 sphinx-autobuild ./source/ ./build/html/
 ```
 
-## Running pre-commit script / pipelines locally
+### Running pre-commit script / pipelines locally
 
 You can run the **tests** (
 [tox](https://tox.wiki/en/latest/index.html) +
@@ -365,3 +350,19 @@ requires Ruby to be installed. If you want to run that locally as well,
 install Ruby and install markdown lint with `gem install mdl -v 0.11.0`.
 Then from `pre-commit` change `RUN_MDL=false` to `RUN_MDL=true`. (You need to
 copy the file again into `.git/hooks` if you did that earlier)
+
+## Comparison to other Python keyboard libraries
+
+Some other keyboard libraries work by reading proper keycodes from the system.
+
+This means that they usually require either `X server` or `uinput`, so they do
+not work over SSH. But this means they do not have the same limitations as
+this library.
+
+They also support more features such as pressing the keys instead of just
+reacting to user input.
+
+I have good experiences from:
+
+- [pynput](https://pynput.readthedocs.io/en/latest/)
+- [keyboard](https://github.com/boppreh/keyboard) (requires sudo!)

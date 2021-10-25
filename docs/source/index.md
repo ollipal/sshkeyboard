@@ -1,7 +1,7 @@
 ```{include} ../../README.md
 ```
 
-### Other pages
+## Other pages
 
 ```{toctree}
 :maxdepth: 2
