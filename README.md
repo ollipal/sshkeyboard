@@ -1,6 +1,6 @@
 # sshkeyboard
 
-The only keyboard event callback library that works in _all_ unix
+The only keyboard event callback library that works in _all_ Unix
 environments.
 
 It does not depend on X server, uinput, root access (sudo) or
@@ -11,8 +11,7 @@ using with headless computers/servers or for example inside Windows Subsystem
 for Linux (WSL 2). One good use case is Raspberry Pi with Raspberry
 Pi OS Lite.
 
-Supports asyncio and sequential/concurrent callback modes. For Python versions
-above 3.7.
+Supports asyncio and sequential/concurrent callback modes. For Python 3.7+.
 
 [Documentation](https://sshkeyboard.readthedocs.io)  
 [Reference](https://sshkeyboard.readthedocs.io/en/latest/reference.html)  
@@ -69,7 +68,11 @@ with some **limitations**, mainly:
    not attempt to parse those even if they could be technically be parsed in
    some cases
 3. `termios` and `fcntl` are not supported on Windows (except on WSL / WSL 2).
-   If you figure out a workaround, please make a pull request!
+   Note that you _can_ take a SSH connection with CMD/PowerShell/PuTTY to a
+   Unix machine and `sshkeyboard` will work fine. It just means this does not
+   work directly on Windows. If you figure out a workaround, please make a
+   pull request! If you need direct Windows use, check
+   [these libraries](#comparison-to-other-python-keyboard-libraries)
 
 ## Advanced use
 
@@ -365,4 +368,4 @@ reacting to user input.
 I have good experiences from:
 
 - [pynput](https://pynput.readthedocs.io/en/latest/)
-- [keyboard](https://github.com/boppreh/keyboard) (requires sudo!)
+- [keyboard](https://github.com/boppreh/keyboard) (requires sudo)
