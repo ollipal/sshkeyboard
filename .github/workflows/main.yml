@@ -86,4 +86,4 @@ jobs:
       - name: Install and run markdown lint
         run: |
           gem install mdl -v 0.11.0
-          mdl --style '.mdl-style.rb' .
+          mdl --style './docs/.mdl-style.rb' .

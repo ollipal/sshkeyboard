@@ -37,7 +37,7 @@ echo -e "--------------------------------\n"
 
 if [ "$RUN_MDL" = true ] ; then
     echo "mdl:"
-    mdl --style '.mdl-style.rb' . || die
+    mdl --style './docs/.mdl-style.rb' . || die
     echo -e "--------------------------------\n"
 fi
 
