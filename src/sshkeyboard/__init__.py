@@ -115,7 +115,7 @@ _CHAR_TO_READABLE = {
 def listen_keyboard(
     on_press: Optional[Callable[[str], Any]] = None,
     on_release: Optional[Callable[[str], Any]] = None,
-    until: str = "esc",
+    until: Optional[str] = "esc",
     sequential: bool = False,
     delay_second_char: float = 0.75,
     delay_other_chars: float = 0.05,
@@ -146,7 +146,9 @@ def listen_keyboard(
             function takes the pressed key as parameter. Defaults to None.
         on_release: Function that gets called when a key is released. The
             function takes the released key as parameter. Defaults to None.
-        until: A key that will end keyboard listening. Defaults to "esc".
+        until: A key that will end keyboard listening. None means that
+            listening will stop only when :func:`~sshkeyboard.stop_listening`
+            has been called or an error has been raised. Defaults to "esc".
         sequential: If enabled, callbacks will be forced to happen one by
             one instead of concurrently. Defaults to False.
         delay_second_char: The timeout between first and second character when
@@ -193,7 +195,7 @@ def listen_keyboard(
 def listen_keyboard_async(
     on_press: Optional[Callable[[str], Any]] = None,
     on_release: Optional[Callable[[str], Any]] = None,
-    until: str = "esc",
+    until: Optional[str] = "esc",
     sequential: bool = False,
     delay_second_char: float = 0.75,
     delay_other_chars: float = 0.05,
@@ -228,7 +230,9 @@ def listen_keyboard_async(
             function takes the pressed key as parameter. Defaults to None.
         on_release: Function that gets called when a key is released. The
             function takes the released key as parameter. Defaults to None.
-        until: A key that will end keyboard listening. Defaults to "esc".
+        until: A key that will end keyboard listening. None means that
+            listening will stop only when :func:`~sshkeyboard.stop_listening`
+            has been called or an error has been raised. Defaults to "esc".
         sequential: If enabled, callbacks will be forced to happen one by
             one instead of concurrently. Defaults to False.
         delay_second_char: The timeout between first and second character when
@@ -270,7 +274,7 @@ def listen_keyboard_async(
 async def listen_keyboard_async_manual(
     on_press: Optional[Callable[[str], Any]] = None,
     on_release: Optional[Callable[[str], Any]] = None,
-    until: str = "esc",
+    until: Optional[str] = "esc",
     sequential: bool = False,
     delay_second_char: float = 0.75,
     delay_other_chars: float = 0.05,
@@ -323,7 +327,9 @@ async def listen_keyboard_async_manual(
     ), "Either on_press or on_release should be defined"
     _check_callback_ok(on_press, "on_press")
     _check_callback_ok(on_release, "on_release")
-    assert isinstance(until, str), "'until' has to be a string"
+    assert until is None or isinstance(
+        until, str
+    ), "'until' has to be a string or None"
     assert isinstance(sequential, bool), "'sequential' has to be boolean"
     assert isinstance(
         delay_second_char, (int, float)
@@ -534,7 +540,7 @@ async def _react_to_input(state, options):
             state.current = state.current.lower()
 
         # Stop if until character has been read
-        if state.current == options.until:
+        if options.until is not None and state.current == options.until:
             stop_listening()
             return state
 
