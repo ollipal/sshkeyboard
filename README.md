@@ -143,38 +143,38 @@ Then pressing `"a"`, `"s"` and `"d"` keys will log:
 ### Asyncio
 
 You can also use asynchronous functions as `on_press`/`on_release` callbacks
-with `listen_keyboard_async` function.
+with `listen_keyboard`.
 
-`listen_keyboard_async` also exposes a new optional parameter `sleep` that can
-be used to change automatic `asyncio.sleep` times between async callbacks.
-The previous example `listen_keyboard` does not have these sleep times.
+Using asynchronous callbacks makes the `sleep` parameter active, which defines
+automatic `asyncio.sleep` amount between the callbacks. If there aro no
+asynchronous callbacks, `sleep` parameter will be ignored.
 
 ```python
 import asyncio
-from sshkeyboard import listen_keyboard_async
+from sshkeyboard import listen_keyboard
 
 async def press(key):
     print(f"'{key}' pressed")
     await asyncio.sleep(3)
     print(f"'{key}' slept")
 
-listen_keyboard_async(
+listen_keyboard(
     on_press=press,
     sleep=0.05,
 )
 ```
 
-> **NOTE** remember to use `await asyncio.sleep(...)` in async callbacks instead
-of `time.sleep(...)` or the timings will fail:
+> **NOTE** remember to use `await asyncio.sleep(...)` in async callbacks
+instead of `time.sleep(...)` or the timings will fail:
 
 ### Mixing asynchronous and concurrent callbacks
 
-This library also supports mixing asynchronous and concurrent callbacks:
+`listen_keyboard` also supports mixing asynchronous and concurrent callbacks:
 
 ```python
 import asyncio
 import time
-from sshkeyboard import listen_keyboard_async
+from sshkeyboard import listen_keyboard
 
 async def press(key):
     print(f"'{key}' pressed")
@@ -186,7 +186,7 @@ def release(key):
     time.sleep(3)
     print(f"'{key}' release slept")
 
-listen_keyboard_async(
+listen_keyboard(
     on_press=press,
     on_release=release,
 )
@@ -209,7 +209,7 @@ And with `sequential=True`:
 
 ```python
 # ...
-listen_keyboard_async(
+listen_keyboard(
     on_press=press,
     on_release=release,
     sequential=True,
@@ -229,8 +229,8 @@ will log:
 's' release slept
 ```
 
-> **NOTE** remember to use `await asyncio.sleep(...)` in async callbacks instead
-of `time.sleep(...)` or the timings will fail:
+> **NOTE** remember to use `await asyncio.sleep(...)` in async callbacks
+instead of `time.sleep(...)` or the timings will fail:
 
 ### Stop listening
 
@@ -296,13 +296,12 @@ for more functions and parameters such as:
 
 - `lower` parameter
 - `max_thread_pool_workers` parameter
-- `listen_keyboard_async_manual` function
+- `listen_keyboard_manual` function
 
 Direct links to functions:
 
 - [listen_keyboard](https://sshkeyboard.readthedocs.io/en/latest/reference.html#sshkeyboard.listen_keyboard)
-- [listen_keyboard_async](https://sshkeyboard.readthedocs.io/en/latest/reference.html#sshkeyboard.listen_keyboard_async)
-- [listen_keyboard_async_manual](https://sshkeyboard.readthedocs.io/en/latest/reference.html#sshkeyboard.listen_keyboard_async_manual)
+- [listen_keyboard_manual](https://sshkeyboard.readthedocs.io/en/latest/reference.html#sshkeyboard.listen_keyboard_manual)
 - [stop_listening](https://sshkeyboard.readthedocs.io/en/latest/reference.html#sshkeyboard.stop_listening)
 
 ## Development

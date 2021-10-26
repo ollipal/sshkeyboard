@@ -122,13 +122,17 @@ def listen_keyboard(
     lower: bool = True,
     debug: bool = False,
     max_thread_pool_workers: Optional[int] = None,
+    sleep: float = 0.05,
 ):
+
     """Listen for keyboard events and fire `on_press` and `on_release` callback
     functions
 
     Blocks the thread until the key in `until` parameter has been pressed, an
     error has been raised or :func:`~sshkeyboard.stop_listening` has been
     called.
+
+    Supports asynchronous callbacks also.
 
     Example:
 
@@ -139,7 +143,13 @@ def listen_keyboard(
         def press(key):
             print(f"'{key}' pressed")
 
-        listen_keyboard(on_press=press)
+        async def release(key):
+            print(f"'{key}' released")
+
+        listen_keyboard(
+            on_press=press,
+            on_release=release,
+        )
 
     Args:
         on_press: Function that gets called when a key is pressed. The
@@ -150,7 +160,7 @@ def listen_keyboard(
             listening will stop only when :func:`~sshkeyboard.stop_listening`
             has been called or an error has been raised. Defaults to "esc".
         sequential: If enabled, callbacks will be forced to happen one by
-            one instead of concurrently. Defaults to False.
+            one instead of concurrently or asynchronously. Defaults to False.
         delay_second_char: The timeout between first and second character when
             holding down a key. Depends on terminal and is used for parsing
             the input. Defaults to 0.75.
@@ -164,95 +174,12 @@ def listen_keyboard(
         max_thread_pool_workers: Define the number of workers in
             ThreadPoolExecutor, None means that a default value will get used.
             Will get ignored if sequential=True. Defaults to None.
+        sleep: asyncio.sleep() amount between starting the callbacks. Sleep
+            in use if neither of the callbacks are  asynchronous. None will
+            remove the sleep altogether. Defaults to 0.05.
     """
 
-    assert not asyncio.iscoroutinefunction(
-        on_press
-    ), "Use listen_keyboard_async instead if you have async on_press"
-    assert not asyncio.iscoroutinefunction(
-        on_release
-    ), "Use listen_keyboard_async instead if you have async on_release"
-
-    coro = listen_keyboard_async_manual(
-        on_press,
-        on_release,
-        until,
-        sequential,
-        delay_second_char,
-        delay_other_chars,
-        lower,
-        debug,
-        max_thread_pool_workers,
-        sleep=None,
-    )
-
-    if _is_python_36:
-        run36(coro)
-    else:
-        asyncio.run(coro)
-
-
-def listen_keyboard_async(
-    on_press: Optional[Callable[[str], Any]] = None,
-    on_release: Optional[Callable[[str], Any]] = None,
-    until: Optional[str] = "esc",
-    sequential: bool = False,
-    delay_second_char: float = 0.75,
-    delay_other_chars: float = 0.05,
-    lower: bool = True,
-    debug: bool = False,
-    max_thread_pool_workers: Optional[int] = None,
-    sleep: float = 0.05,
-):
-    """The same function as :func:`~sshkeyboard.listen_keyboard`, but now the
-    on_press and on_release callbacks are allowed to be asynchronous, and
-    has a new `sleep` parameter
-
-    The new parameter `sleep` defines a timeout between starting the
-    callbacks.
-
-    For the asynchronous callbacks, parameter `sequential` defines whether a
-    callback is awaited or not before starting the next callback.
-
-    Example:
-
-    .. code-block:: python
-
-        from sshkeyboard import listen_keyboard_async
-
-        async def press(key):
-            print(f"'{key}' pressed")
-
-        listen_keyboard_async(on_press=press)
-
-    Args:
-        on_press: Function that gets called when a key is pressed. The
-            function takes the pressed key as parameter. Defaults to None.
-        on_release: Function that gets called when a key is released. The
-            function takes the released key as parameter. Defaults to None.
-        until: A key that will end keyboard listening. None means that
-            listening will stop only when :func:`~sshkeyboard.stop_listening`
-            has been called or an error has been raised. Defaults to "esc".
-        sequential: If enabled, callbacks will be forced to happen one by
-            one instead of concurrently. Defaults to False.
-        delay_second_char: The timeout between first and second character when
-            holding down a key. Depends on terminal and is used for parsing
-            the input. Defaults to 0.75.
-        delay_other_chars: The timeout between all other characters when
-            holding down a key. Depends on terminal and is used for parsing
-            the input. Defaults to 0.05.
-        lower: If enabled, the callback 'key' parameter gets turned into lower
-            case key even if it was upper case, for example "A" -> "a".
-            Defaults to True.
-        debug: Print debug messages. Defaults to False.
-        max_thread_pool_workers: Define the number of workers in
-            ThreadPoolExecutor, None means that a default value will get used.
-            Will get ignored if sequential=True. Defaults to None.
-        sleep: asyncio.sleep() amount between starting the callbacks. None
-            will remove the sleep altogether. Defaults to 0.05.
-    """
-
-    coro = listen_keyboard_async_manual(
+    coro = listen_keyboard_manual(
         on_press,
         on_release,
         until,
@@ -271,7 +198,7 @@ def listen_keyboard_async(
         asyncio.run(coro)
 
 
-async def listen_keyboard_async_manual(
+async def listen_keyboard_manual(
     on_press: Optional[Callable[[str], Any]] = None,
     on_release: Optional[Callable[[str], Any]] = None,
     until: Optional[str] = "esc",
@@ -283,27 +210,27 @@ async def listen_keyboard_async_manual(
     max_thread_pool_workers: Optional[int] = None,
     sleep: Optional[float] = 0.05,
 ):
-    """The same as :func:`~sshkeyboard.listen_keyboard_async`, but now the
+    """The same as :func:`~sshkeyboard.listen_keyboard`, but now the
     awaiting must be handled by the caller
 
     .. code-block:: python
 
-        from sshkeyboard import listen_keyboard_async_manual
+        from sshkeyboard import listen_keyboard_manual
         # ...
-        asyncio.run(listen_keyboard_async_manual(...))
+        asyncio.run(listen_keyboard_manual(...))
 
     is the same as
 
     .. code-block:: python
 
-        from sshkeyboard import listen_keyboard_async
+        from sshkeyboard import listen_keyboard
         # ...
-        listen_keyboard_async(...)
+        listen_keyboard(...)
 
     (Python version 3.6 which does not have `asyncio.run` is handled
     differently internally)
 
-    Has the same parameters as :func:`~sshkeyboard.listen_keyboard_async`
+    Has the same parameters as :func:`~sshkeyboard.listen_keyboard`
     """
 
     global _running
@@ -348,6 +275,12 @@ async def listen_keyboard_async_manual(
 
     _running = True
     _should_run = True
+
+    # sleep not used without async callbacks
+    if not asyncio.iscoroutinefunction(
+        on_press
+    ) and not asyncio.iscoroutinefunction(on_release):
+        sleep = None
 
     # Create thread pool executor only if it will get used
     executor = None
@@ -577,15 +510,11 @@ if __name__ == "__main__":
     def press(key):
         print(f"'{key}' pressed")
 
-    def release(key):
+    async def release(key):
         print(f"'{key}' released")
 
     # Sync version
     print("listening_keyboard(), press keys, and press 'esc' to exit")
     listen_keyboard(on_press=press, on_release=release)
-
-    # Async version
-    print("\nlistening_keyboard_async(), press keys,and press 'esc' to exit")
-    listen_keyboard_async(on_press=press, on_release=release)
     # ^this is the same as
-    # asyncio.run(listen_keyboard_async_manual(press, release))
+    # asyncio.run(listen_keyboard_manual(press, release))
