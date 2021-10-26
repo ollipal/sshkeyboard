@@ -1,5 +1,12 @@
 # Changelog
 
+## 2.0.0
+
+`listen_keyboard` supports now async callbacks directly
+
+- `listen_keyboard_async` removed as it is no longer required
+- `listen_keyboard_async_manual` renamed to `listen_keyboard_manual`
+
 ## 1.0.1
 
 Release to get the PyPI page content updated
