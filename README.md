@@ -6,12 +6,14 @@ environments.
 It does not depend on X server, uinput, root access (sudo) or
 any external dependencies.
 
-This means it is suitable even when taking a SSH connection (hence the name),
-using with headless computers/servers or for example inside Windows Subsystem
-for Linux (WSL 2). One good use case is Raspberry Pi with Raspberry
-Pi OS Lite.
+This means it is suitable even when taking a
+[SSH](https://en.wikipedia.org/wiki/Secure_Shell) connection (hence the name),
+when using with headless computers/servers or for example inside Windows
+Subsystem for Linux (WSL 2). One good use case is adding user input callbacks
+while having a SSH connection to Raspberry Pi.
 
-Supports asyncio and sequential/concurrent callback modes. For Python 3.6+.
+Supports [asyncio](https://docs.python.org/3/library/asyncio.html) and
+sequential/concurrent callback modes. For Python 3.6+.
 
 [Documentation](https://sshkeyboard.readthedocs.io)  
 [Reference](https://sshkeyboard.readthedocs.io/en/latest/reference.html)  
@@ -69,14 +71,15 @@ it comes with some **limitations**, mainly:
    releases the previous keys when a new one is pressed
 2. Some keys do not write to `sys.stdin` when pressed, such as `Ctrl`,
    `Shift`, `Caps Lock`, `Alt` and `Windows`/`Command`/`Super` key. That is
-   why this library does not attempt to parse those even if they could be 
+   why this library does not attempt to parse those even if they could be
    technically be parsed in some cases
 3. `termios` and `fcntl` are not supported on Windows (except on WSL / WSL 2).
    Note that you _can_ take a SSH connection with CMD/PowerShell/PuTTY to a
-   Unix machine and `sshkeyboard` _will_ work. It just means this does not
-   work directly on Windows. If you figure out a workaround to make this work,
-   on Windows, please make a pull request! If you need direct Windows use,
-   check [pynput](#comparison-to-other-python-keyboard-libraries) or
+   Unix machine, and `sshkeyboard` _will_ work. This limitation just means
+   that the library does not work directly on Windows. If you figure out a
+   workaround to make this work on Windows, please make a pull request! If you
+   need direct Windows use, check
+   [pynput](#comparison-to-other-python-keyboard-libraries) or
    [keyboard](#comparison-to-other-python-keyboard-libraries) libraries out.
 
 ## Advanced use
@@ -117,7 +120,7 @@ you should set `sequential` parameter to `True`:
 listen_keyboard(on_press=press, sequential=True)
 ```
 
-will log:
+Then pressing `"a"`, `"s"` and `"d"` keys will log:
 
 ```text
 'a' pressed
@@ -135,6 +138,7 @@ with `listen_keyboard_async` function.
 
 `listen_keyboard_async` also exposes a new optional parameter `sleep` that can
 be used to change automatic `asyncio.sleep` times between async callbacks.
+The previous example `listen_keyboard` does not have these sleep times.
 
 ```python
 import asyncio
@@ -153,8 +157,7 @@ of `time.sleep(...)` or the timings will fail:
 
 ### Mixing asynchronous and concurrent callbacks
 
-This library also supports mixing asynchronous and concurrent callbacks
-with `listen_keyboard_async` function.
+This library also supports mixing asynchronous and concurrent callbacks:
 
 ```python
 import asyncio
@@ -174,7 +177,7 @@ def release(key):
 listen_keyboard_async(on_press=press, on_release=release)
 ```
 
-Pressing `"a"` and `"s"` will log:
+Here pressing `"a"` and `"s"` will log:
 
 ```text
 'a' pressed
@@ -233,6 +236,9 @@ parameter, which defaults to `"esc"`:
 listen_keyboard(on_press=press, until="z")
 ```
 
+`until` can be also set to `None`. This means that listening ends only on
+`stop_listening()` or if an error has been raised.
+
 ### Troubleshooting
 
 If some keys do not seem to register correctly, try turning the debug mode on.
@@ -243,8 +249,9 @@ This will add logs if some keys are skipped intentionally:
 listen_keyboard(on_press=press, debug=True)
 ```
 
-If one key press causes multiple callbacks or if releasing happens too slowly,
-you can try to tweak the default timing parameters:
+If one key press causes multiple `on_press` / `on_release` callbacks or if
+releasing happens too slowly, you can try to tweak the default timing
+parameters:
 
 ```python
 # ...
@@ -253,26 +260,37 @@ listen_keyboard(on_press=press, delay_second_char=0.75, delay_other_chars=0.05)
 
 ### More
 
-Check the
+Check out the full
 [reference](https://sshkeyboard.readthedocs.io/en/latest/reference.html)
-for more functions and  parameters:
+for more functions and parameters such as:
 
 - `lower` parameter
 - `max_thread_pool_workers` parameter
 - `listen_keyboard_async_manual` function
 
+Direct links to functions:
+
+- [listen_keyboard](https://sshkeyboard.readthedocs.io/en/latest/reference.html#sshkeyboard.listen_keyboard)
+- [listen_keyboard_async](https://sshkeyboard.readthedocs.io/en/latest/reference.html#sshkeyboard.listen_keyboard_async)
+- [listen_keyboard_async_manual](https://sshkeyboard.readthedocs.io/en/latest/reference.html#sshkeyboard.listen_keyboard_async_manual)
+- [stop_listening](https://sshkeyboard.readthedocs.io/en/latest/reference.html#sshkeyboard.stop_listening)
+
 ## Development
 
-In this section I'll explain how to build the documentation and run the
+This sections explains how to build the documentation and how to run the
 [pre-commit script](https://github.com/ollipal/sshkeyboard/blob/main/pre-commit)
-locally. The pre-commit script handles running tests, formatting and
-linting before each commit. These also run on
-[Github Actions](https://github.com/ollipal/sshkeyboard/blob/main/.github/workflows/main.yml)
-.
-
-This helps if you want to create
+locally. This helps if you want to create
 [a pull request](https://github.com/ollipal/sshkeyboard/pulls)
 or if you just want to try things out.
+
+Building the documentations allows you to build all of the files served on the
+[documentation](https://sshkeyboard.readthedocs.io) site locally.
+
+The
+[pre-commit script](https://github.com/ollipal/sshkeyboard/blob/main/pre-commit)
+handles running tests, formatting and
+linting before each Git commit. These same checks also run automatically on
+[Github Actions](https://github.com/ollipal/sshkeyboard/blob/main/.github/workflows/main.yml).
 
 Start by cloning this library, and change directory to the project root:
 
@@ -291,8 +309,8 @@ source .env/bin/activate
 
 (Later you can deactivate the virtual environment with: `deactivate`)
 
-To build the documentation or run the pre-commit / pipelines locally, you need
-to install the development dependencies by running:
+To build the documentation or run the pre-commit script locally, you need
+to install the development dependencies:
 
 ```text
 pip install -r dev-requirements.txt
@@ -306,14 +324,14 @@ To build the documentation locally, first change into `docs/` directory:
 cd docs
 ```
 
-Then simply call
+Then to build the documentation, call:
 
 ```text
 make html
 ```
 
-Now you shold have a new `docs/build/` directory, and you can open
-`<your-clone-location>/sshkeyboard/docs/build/html/index.html` from your browser.
+Now you should have a new `docs/build/` directory, and you can open
+`<your-clone-path>/sshkeyboard/docs/build/html/index.html` from your browser.
 
 You can force the rebuild by running:
 
@@ -329,48 +347,52 @@ You can change the documentation content by changing `README.md` or files from
 sphinx-autobuild ./source/ ./build/html/
 ```
 
-### Running pre-commit script / pipelines locally
+### Running the pre-commit script
 
-You can run the **tests** (
-[tox](https://tox.wiki/en/latest/index.html) +
-[pytest](https://docs.pytest.org)), **formatting** (
-[black](https://black.readthedocs.io/en/stable/),
-[isort](https://pycqa.github.io/isort/)) and **linting** (
-[pflake8](https://github.com/csachs/pyproject-flake8),
+You can run the **tests**
+([tox](https://tox.wiki/en/latest/index.html),
+[pytest](https://docs.pytest.org)), **formatting**
+([black](https://black.readthedocs.io/en/stable/),
+[isort](https://pycqa.github.io/isort/)) and **linting**
+([pflake8](https://github.com/csachs/pyproject-flake8),
 [pep8-naming](https://github.com/PyCQA/pep8-naming),
 [codespell](https://github.com/codespell-project/codespell),
 [markdownlint](https://github.com/markdownlint/markdownlint)) simply by
-running:
+executing:
 
 ```text
 ./pre-commit
 ```
 
-If you want to automatically run these when you call `git commit`, copy the
-script into `.git/hooks` directory:
+Now if you want to automatically run these when you call `git commit`, copy
+the script into `.git/hooks/` directory:
 
 ```text
 cp pre-commit .git/hooks
 ```
 
 > **NOTE**: this process does not run `markdownlint` by default as it
-requires Ruby to be installed. If you want to run that locally as well,
-install Ruby and install markdown lint with `gem install mdl -v 0.11.0`.
-Then from `pre-commit` change `RUN_MDL=false` to `RUN_MDL=true`. (You need to
-copy the file again into `.git/hooks` if you did that earlier)
+requires [Ruby](https://www.ruby-lang.org/en/) to be installed. If you want
+to run `markdownlint` locally as well,
+[install Ruby](https://www.ruby-lang.org/en/documentation/installation/)
+and install markdown lint with `gem install mdl -v 0.11.0`. Then from
+`pre-commit` change `RUN_MDL=false` to `RUN_MDL=true`. (You need to copy the
+file again into `.git/hooks/` if you did that earlier)
 
 ## Comparison to other Python keyboard libraries
 
-Some other keyboard libraries work by reading proper keycodes from the system.
+The other keyboard libraries work by reading proper keycodes from the system.
 
-This means that they usually require either `X server` or `uinput`, so they do
-not work over SSH. But this means they do not have the same limitations as
-this library.
+This means that they usually require either
+[X server](https://en.wikipedia.org/wiki/X_Window_System) or
+[uinput](https://www.kernel.org/doc/html/v4.12/input/uinput.html), so they do
+not work over SSH. But this means they do not have the same
+[limitations](#how-it-works) as this library.
 
-They also support more features such as pressing the keys instead of just
-reacting to user input.
+They usually can also support more features such as pressing the keys instead
+of just reacting to user input.
 
-I have good experiences from:
+I have good experiences from these libraries:
 
 - [pynput](https://pynput.readthedocs.io/en/latest/)
 - [keyboard](https://github.com/boppreh/keyboard) (requires sudo)
