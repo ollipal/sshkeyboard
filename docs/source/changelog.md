@@ -1,5 +1,11 @@
 # Changelog
 
+## 2.1.0
+
+Major bug fixed from async on_press / on_release callbacks
+
+- Async callbacks triggering `asyncio.sleep` too often fixed
+
 ## 2.0.1
 
 Release to get the PyPI page content updated
