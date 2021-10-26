@@ -1,5 +1,12 @@
 # Changelog
 
+## 2.0.1
+
+Release to get the PyPI page content updated
+
+- README wording improved
+- pyproject.toml more tags added
+
 ## 2.0.0
 
 `listen_keyboard` supports now async callbacks directly
