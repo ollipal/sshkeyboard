@@ -314,10 +314,12 @@ async def listen_keyboard_manual(
     # Listen
     with _raw(sys.stdin), _nonblocking(sys.stdin):
         while _should_run:
-            state = await _react_to_input(state, options)
+            state, should_sleep = await _react_to_input(state, options)
             if sleep is not None:
-                await asyncio.sleep(sleep)
-
+                if should_sleep:
+                    await asyncio.sleep(sleep)
+                else:
+                    await asyncio.sleep(0)  # Give turn to other async tasks
     # Cleanup
     if executor is not None:
         executor.shutdown()
@@ -448,12 +450,15 @@ def _read_and_parse_ansi(char):
 
 
 async def _react_to_input(state, options):
+    # Change to True if on_press or on_release callback is triggered
+    should_sleep = False
+
     # Read next character
     state.current = _read_chars(1)
 
     # Skip and continue if read failed
     if state.current is None:
-        return state
+        return state, should_sleep
 
     # Handle any character
     elif state.current != "":
@@ -463,7 +468,7 @@ async def _react_to_input(state, options):
             if state.current is None:
                 if options.debug:
                     print(f"Non-supported ansi char: {repr(raw)}")
-                return state
+                return state, should_sleep
         # Change some character representations to readable strings
         elif state.current in _CHAR_TO_READABLE:
             state.current = _CHAR_TO_READABLE[state.current]
@@ -475,15 +480,17 @@ async def _react_to_input(state, options):
         # Stop if until character has been read
         if options.until is not None and state.current == options.until:
             stop_listening()
-            return state
+            return state, should_sleep
 
         # Release state.previous if new pressed
         if state.previous != "" and state.current != state.previous:
             await options.on_release_callback(state.previous)
+            should_sleep = True
 
         # Press if new character, update state.previous
         if state.current != state.previous:
             await options.on_press_callback(state.current)
+            should_sleep = True
             state.initial_press_time = time()
             state.previous = state.current
 
@@ -500,9 +507,10 @@ async def _react_to_input(state, options):
         and time() - state.press_time > options.delay_other_chars
     ):
         await options.on_release_callback(state.previous)
+        should_sleep = True
         state.previous = state.current
 
-    return state
+    return state, should_sleep
 
 
 if __name__ == "__main__":
