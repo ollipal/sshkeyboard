@@ -63,8 +63,8 @@ done with [fcntl](https://docs.python.org/3/library/fcntl.html) and
 modules.
 
 This behaviour allows it to work where other libraries like
-[pynput](#comparison-to-other-python-keyboard-libraries) or
-[keyboard](#comparison-to-other-python-keyboard-libraries) do not work, but
+[pynput](#comparison-to-other-keyboard-libraries) or
+[keyboard](#comparison-to-other-keyboard-libraries) do not work, but
 it comes with some **limitations**, mainly:
 
 1. Holding multiple keys down at the same time does not work, the library
@@ -79,8 +79,8 @@ it comes with some **limitations**, mainly:
    that the library does not work directly on Windows. If you figure out a
    workaround to make this work on Windows, please make a pull request! If you
    need direct Windows use, check
-   [pynput](#comparison-to-other-python-keyboard-libraries) or
-   [keyboard](#comparison-to-other-python-keyboard-libraries) libraries out.
+   [pynput](#comparison-to-other-keyboard-libraries) or
+   [keyboard](#comparison-to-other-keyboard-libraries) libraries out.
 
 ## Advanced use
 
@@ -131,7 +131,7 @@ Then pressing `"a"`, `"s"` and `"d"` keys will log:
 'd' slept
 ```
 
-### Asyncio mode
+### Asyncio
 
 You can also use asynchronous functions as `on_press`/`on_release` callbacks
 with `listen_keyboard_async` function.
@@ -223,7 +223,8 @@ from sshkeyboard import listen_keyboard, stop_listening
 
 def press(key):
     print(f"'{key}' pressed")
-    stop_listening()
+    if key == "z":
+        stop_listening()
 
 listen_keyboard(on_press=press)
 ```
@@ -379,7 +380,7 @@ and install markdown lint with `gem install mdl -v 0.11.0`. Then from
 `pre-commit` change `RUN_MDL=false` to `RUN_MDL=true`. (You need to copy the
 file again into `.git/hooks/` if you did that earlier)
 
-## Comparison to other Python keyboard libraries
+## Comparison to other keyboard libraries
 
 The other keyboard libraries work by reading proper keycodes from the system.
 
