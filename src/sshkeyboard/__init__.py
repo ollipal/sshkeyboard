@@ -175,8 +175,8 @@ def listen_keyboard(
             ThreadPoolExecutor, None means that a default value will get used.
             Will get ignored if sequential=True. Defaults to None.
         sleep: asyncio.sleep() amount between starting the callbacks. Sleep
-            in use if neither of the callbacks are  asynchronous. None will
-            remove the sleep altogether. Defaults to 0.05.
+            is not in use if neither of the callbacks are  asynchronous. Value
+            None will remove the asyncio.sleep() altogether. Defaults to 0.05.
     """
 
     coro = listen_keyboard_manual(
