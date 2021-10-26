@@ -15,10 +15,10 @@ while having a SSH connection to Raspberry Pi.
 Supports [asyncio](https://docs.python.org/3/library/asyncio.html) and
 sequential/concurrent callback modes. For Python 3.6+.
 
-[Documentation](https://sshkeyboard.readthedocs.io)  
-[Reference](https://sshkeyboard.readthedocs.io/en/latest/reference.html)  
-[Github source](https://github.com/ollipal/sshkeyboard)  
-[PyPI](https://pypi.org/project/sshkeyboard/)
+[Documentation](https://sshkeyboard.readthedocs.io) -
+[Github source](https://github.com/ollipal/sshkeyboard) -
+[PyPI](https://pypi.org/project/sshkeyboard/) -
+[Reference](https://sshkeyboard.readthedocs.io/en/latest/reference.html)
 
 ## Quick start
 
