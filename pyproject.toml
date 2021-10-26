@@ -14,7 +14,7 @@ classifiers = [
 readme = "README.md"
 requires-python = ">=3.6"
 dynamic = ["version", "description"]
-keywords = ["keyboard", "ssh", "callback", "headless", "wsl", "x server", "uinput"]
+keywords = ["keyboard", "listener", "ssh", "callback", "headless", "wsl", "wsl2", "server", "x server", "uinput", "Raspberry Pi", "pynput"]
 
 [project.urls]
 Home = "https://github.com/ollipal/sshkeyboard"
