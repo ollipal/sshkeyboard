@@ -80,11 +80,12 @@ it comes with some **limitations**, mainly:
    why this library does not attempt to parse those even if they could be
    technically be parsed in some cases
 3. `termios` and `fcntl` are not supported on Windows (except on WSL / WSL 2).
-   Note that you _can_ take a SSH connection with CMD/PowerShell/PuTTY to a
-   Unix machine, and `sshkeyboard` _will_ work. This limitation just means
-   that the library does not work directly on Windows. If you figure out a
-   workaround to make this work on Windows, please make a pull request! If you
-   need direct Windows use, check
+   Note that you _can_ take a SSH connection from Windows with
+   CMD/PowerShell/PuTTY to a Unix machine, and `sshkeyboard` _will_ work. This
+   limitation means that the library does not work directly on Windows. If you
+   figure out a workaround to make this work on Windows, please make
+   [a pull request](https://github.com/ollipal/sshkeyboard/pulls)! If you need
+   direct Windows use, check
    [pynput](#comparison-to-other-keyboard-libraries) or
    [keyboard](#comparison-to-other-keyboard-libraries) libraries out.
 
@@ -142,12 +143,13 @@ Then pressing `"a"`, `"s"` and `"d"` keys will log:
 
 ### Asyncio
 
-You can also use asynchronous functions as `on_press`/`on_release` callbacks
+You can also use asynchronous functions as `on_press` / `on_release` callbacks
 with `listen_keyboard`.
 
-Using asynchronous callbacks makes the `sleep` parameter active, which defines
-automatic `asyncio.sleep` amount between the callbacks. If there aro no
-asynchronous callbacks, `sleep` parameter will be ignored.
+The use of asynchronous callbacks causes the `sleep` parameter to be taken
+into account. It defines the automatic `asyncio.sleep()` amount between the
+callbacks. If there aro no asynchronous callbacks, `sleep` parameter will
+be ignored and there are no `asyncio.sleep()`s between the callbacks.
 
 ```python
 import asyncio
@@ -234,8 +236,19 @@ instead of `time.sleep(...)` or the timings will fail:
 
 ### Stop listening
 
-You can stop listening by simply calling `stop_listening()` from the callback
-or from some other function:
+You can change the key that ends the listening by giving `until` parameter,
+which defaults to `"esc"`:
+
+```python
+# ...
+listen_keyboard(
+    on_press=press,
+    until="space",
+)
+```
+
+You also can manually stop listening by calling `stop_listening()` from the
+callback or from some other function:
 
 ```python
 from sshkeyboard import listen_keyboard, stop_listening
@@ -248,18 +261,7 @@ def press(key):
 listen_keyboard(on_press=press)
 ```
 
-You can also change the key that ends the listening by giving `until`
-parameter, which defaults to `"esc"`:
-
-```python
-# ...
-listen_keyboard(
-    on_press=press,
-    until="z",
-)
-```
-
-`until` can be also set to `None`. This means that listening ends only on
+`until` can be also set to `None`. This means that listening ends only with
 `stop_listening()` or if an error has been raised.
 
 ### Troubleshooting
@@ -301,8 +303,8 @@ for more functions and parameters such as:
 Direct links to functions:
 
 - [listen_keyboard](https://sshkeyboard.readthedocs.io/en/latest/reference.html#sshkeyboard.listen_keyboard)
-- [listen_keyboard_manual](https://sshkeyboard.readthedocs.io/en/latest/reference.html#sshkeyboard.listen_keyboard_manual)
 - [stop_listening](https://sshkeyboard.readthedocs.io/en/latest/reference.html#sshkeyboard.stop_listening)
+- [listen_keyboard_manual](https://sshkeyboard.readthedocs.io/en/latest/reference.html#sshkeyboard.listen_keyboard_manual)
 
 ## Development
 
