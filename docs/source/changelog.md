@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.0.1
+
+Release to get the PyPI page content updated
+
+- README updated to be more mobile friendly
+
 ## 1.0.0
 
 Well tested version ready for wider use:
