@@ -51,34 +51,39 @@ $ python example.py
 
 ## How it works
 
-The library works without X server and uinput because it calls the events
-based on characters parsed from
+The library works without
+[X server](https://en.wikipedia.org/wiki/X_Window_System)
+and [uinput](https://www.kernel.org/doc/html/v4.12/input/uinput.html)
+because it calls the events based on characters parsed from
 [sys.stdin](https://docs.python.org/3/library/sys.html#sys.stdin). This is
 done with [fcntl](https://docs.python.org/3/library/fcntl.html) and
 [termios](https://docs.python.org/3/library/termios.html) standard library
 modules.
 
-This behaviour allows it to work where other libraries do not, but it comes
-with some **limitations**, mainly:
+This behaviour allows it to work where other libraries like
+[pynput](#comparison-to-other-python-keyboard-libraries) or
+[keyboard](#comparison-to-other-python-keyboard-libraries) do not work, but
+it comes with some **limitations**, mainly:
 
-1. Holding two keys down at the same time does not work, the library
-   releases the first key when the second key is pressed
-2. Some keys do not write to `sys.stdin` when pressed, such as Ctrl, Shift,
-   Caps Lock, Alt and Windows/Command/Super key. That is why this library does
-   not attempt to parse those even if they could be technically be parsed in
-   some cases
+1. Holding multiple keys down at the same time does not work, the library
+   releases the previous keys when a new one is pressed
+2. Some keys do not write to `sys.stdin` when pressed, such as `Ctrl`,
+   `Shift`, `Caps Lock`, `Alt` and `Windows`/`Command`/`Super` key. That is
+   why this library does not attempt to parse those even if they could be 
+   technically be parsed in some cases
 3. `termios` and `fcntl` are not supported on Windows (except on WSL / WSL 2).
    Note that you _can_ take a SSH connection with CMD/PowerShell/PuTTY to a
-   Unix machine and `sshkeyboard` will work fine. It just means this does not
-   work directly on Windows. If you figure out a workaround, please make a
-   pull request! If you need direct Windows use, check
-   [these libraries](#comparison-to-other-python-keyboard-libraries)
+   Unix machine and `sshkeyboard` _will_ work. It just means this does not
+   work directly on Windows. If you figure out a workaround to make this work,
+   on Windows, please make a pull request! If you need direct Windows use,
+   check [pynput](#comparison-to-other-python-keyboard-libraries) or
+   [keyboard](#comparison-to-other-python-keyboard-libraries) libraries out.
 
 ## Advanced use
 
 ### Sequential mode
 
-Normally this library allows `on_press` and `on_release` callback to be run
+Normally this library allows `on_press` and `on_release` callbacks to be run
 concurrently. This means that by running:
 
 ```python
@@ -93,7 +98,7 @@ def press(key):
 listen_keyboard(on_press=press)
 ```
 
-and pressing `a`, `s` and `d` keys will log:
+and pressing `"a"`, `"s"` and `"d"` keys will log:
 
 ```text
 'a' pressed
@@ -169,7 +174,7 @@ def release(key):
 listen_keyboard_async(on_press=press, on_release=release)
 ```
 
-Pressing `a` and `s` will log:
+Pressing `"a"` and `"s"` will log:
 
 ```text
 'a' pressed
@@ -221,7 +226,7 @@ listen_keyboard(on_press=press)
 ```
 
 You can also change the key that ends the listening by giving `until`
-parameter, which defaults to `esc`:
+parameter, which defaults to `"esc"`:
 
 ```python
 # ...
