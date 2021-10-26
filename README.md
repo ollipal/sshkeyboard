@@ -40,7 +40,10 @@ def press(key):
 def release(key):
     print(f"'{key}' released")
 
-listen_keyboard(on_press=press, on_release=release)
+listen_keyboard(
+    on_press=press,
+    on_release=release,
+)
 ```
 
 Output:
@@ -117,7 +120,10 @@ you should set `sequential` parameter to `True`:
 
 ```python
 # ...
-listen_keyboard(on_press=press, sequential=True)
+listen_keyboard(
+    on_press=press,
+    sequential=True,
+)
 ```
 
 Then pressing `"a"`, `"s"` and `"d"` keys will log:
@@ -149,7 +155,10 @@ async def press(key):
     await asyncio.sleep(3)
     print(f"'{key}' slept")
 
-listen_keyboard_async(on_press=press, sleep=0.05)
+listen_keyboard_async(
+    on_press=press,
+    sleep=0.05,
+)
 ```
 
 > **NOTE** remember to use `await asyncio.sleep(...)` in async callbacks instead
@@ -174,7 +183,10 @@ def release(key):
     time.sleep(3)
     print(f"'{key}' release slept")
 
-listen_keyboard_async(on_press=press, on_release=release)
+listen_keyboard_async(
+    on_press=press,
+    on_release=release,
+)
 ```
 
 Here pressing `"a"` and `"s"` will log:
@@ -194,7 +206,11 @@ And with `sequential=True`:
 
 ```python
 # ...
-listen_keyboard_async(on_press=press, on_release=release, sequential=True)
+listen_keyboard_async(
+    on_press=press,
+    on_release=release,
+    sequential=True,
+)
 ```
 
 will log:
@@ -234,7 +250,10 @@ parameter, which defaults to `"esc"`:
 
 ```python
 # ...
-listen_keyboard(on_press=press, until="z")
+listen_keyboard(
+    on_press=press,
+    until="z",
+)
 ```
 
 `until` can be also set to `None`. This means that listening ends only on
@@ -247,7 +266,10 @@ This will add logs if some keys are skipped intentionally:
 
 ```python
 # ...
-listen_keyboard(on_press=press, debug=True)
+listen_keyboard(
+    on_press=press,
+    debug=True,
+)
 ```
 
 If one key press causes multiple `on_press` / `on_release` callbacks or if
@@ -256,7 +278,11 @@ parameters:
 
 ```python
 # ...
-listen_keyboard(on_press=press, delay_second_char=0.75, delay_other_chars=0.05)
+listen_keyboard(
+    on_press=press,
+    delay_second_char=0.75,
+    delay_other_chars=0.05,
+)
 ```
 
 ### More
