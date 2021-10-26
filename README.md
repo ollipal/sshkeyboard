@@ -13,7 +13,7 @@ Subsystem for Linux (WSL 2).
 
 One good use case is adding keyboard input callbacks while having a SSH
 connection to Raspberry Pi. Note that this library can also be used locally
-without SSH connection.
+without a SSH connection.
 
 Supports [asyncio](https://docs.python.org/3/library/asyncio.html) and
 sequential/concurrent callback modes. For Python 3.6+.
