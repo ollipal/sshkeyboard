@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.0.0
+
+Well tested version ready for wider use:
+
+- Support now expanded to Python 3.6 also
+- `until` parameter can now be set to None to turn the feature off
+- Assertions check now that the operating system and Python versions
+  are supported during the runtime
+- README rewritten
+
 ## 0.1.1
 
 Readme updates
