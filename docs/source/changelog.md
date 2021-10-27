@@ -1,5 +1,12 @@
 # Changelog
 
+## 2.2.0
+
+`sleep` affects now between every read attempt instead of between callbacks
+
+- `sleep` affects every read even when no async callbacks are present
+- `sleep` default value changed from 0.05 to 0.01
+
 ## 2.1.0
 
 Major bug fixed from async on_press / on_release callbacks
