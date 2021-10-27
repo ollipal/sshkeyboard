@@ -3,17 +3,17 @@
 The only keyboard event callback library that works in _all_ Unix
 environments.
 
-It does not depend on X server, uinput, root access (sudo) or
-any external dependencies.
-
-This means it is suitable even when taking a
+It is suitable even when used through an
 [SSH](https://en.wikipedia.org/wiki/Secure_Shell) connection (hence the name),
 when using with headless computers/servers, or for example inside Windows
 Subsystem for Linux (WSL 2).
 
-One good use case is adding keyboard input callbacks while having a SSH
-connection to Raspberry Pi. Note that this library can also be used locally
-without a SSH connection.
+One good use case is controlling some Raspberry Pi based robot or RC car
+through SSH. Note that this library can also be used locally without an SSH
+connection.
+
+It does not depend on X server, uinput, root access (sudo) or
+any external dependencies.
 
 Supports [asyncio](https://docs.python.org/3/library/asyncio.html) and
 sequential/concurrent callback modes. For Python 3.6+.
@@ -21,7 +21,8 @@ sequential/concurrent callback modes. For Python 3.6+.
 [Documentation](https://sshkeyboard.readthedocs.io) -
 [Github source](https://github.com/ollipal/sshkeyboard) -
 [PyPI](https://pypi.org/project/sshkeyboard/) -
-[Reference](https://sshkeyboard.readthedocs.io/en/latest/reference.html)
+[Reference](https://sshkeyboard.readthedocs.io/en/latest/reference.html) -
+[![Downloads](https://static.pepy.tech/personalized-badge/sshkeyboard?period=total&units=international_system&left_color=grey&right_color=blue&left_text=Downloads)](https://pepy.tech/project/sshkeyboard)
 
 ## Quick start
 
@@ -74,7 +75,9 @@ This behaviour allows it to work where other libraries like
 it comes with some **limitations**, mainly:
 
 1. Holding multiple keys down at the same time does not work, the library
-   releases the previous keys when a new one is pressed
+   releases the previous keys when a new one is pressed. Releasing keys also
+   happens after a short delay, and some key presses can get lost if the same
+   key gets spammed fast.
 2. Some keys do not write to `sys.stdin` when pressed, such as `Ctrl`,
    `Shift`, `Caps Lock`, `Alt` and `Windows`/`Command`/`Super` key. That is
    why this library does not attempt to parse those even if they could be

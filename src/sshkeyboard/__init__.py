@@ -128,13 +128,13 @@ def listen_keyboard(
     """Listen for keyboard events and fire `on_press` and `on_release` callback
     functions
 
+    Supports asynchronous callbacks also.
+
     Blocks the thread until the key in `until` parameter has been pressed, an
     error has been raised or :func:`~sshkeyboard.stop_listening` has been
     called.
 
-    Supports asynchronous callbacks also.
-
-    Example:
+    Simple example with asynchronous and regular callbacks:
 
     .. code-block:: python
 
@@ -320,6 +320,19 @@ def stop_listening() -> None:
 
     Can be called inside the callbacks or from outside. Does not do anything
     if listener is not running.
+
+    Example to stop after some condition is met, ("z" pressed in this case):
+
+    .. code-block:: python
+
+        from sshkeyboard import listen_keyboard, stop_listening
+
+        def press(key):
+            print(f"'{key}' pressed")
+            if key == "z":
+                stop_listening()
+
+        listen_keyboard(on_press=press)
     """
     if _running:
         global _should_run
