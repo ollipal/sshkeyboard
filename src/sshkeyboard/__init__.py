@@ -122,8 +122,8 @@ def listen_keyboard(
     lower: bool = True,
     debug: bool = False,
     max_thread_pool_workers: Optional[int] = None,
-    sleep: float = 0.05,
-):
+    sleep: float = 0.01,
+) -> None:
 
     """Listen for keyboard events and fire `on_press` and `on_release` callback
     functions
@@ -140,10 +140,10 @@ def listen_keyboard(
 
         from sshkeyboard import listen_keyboard
 
-        def press(key):
+        async def press(key):
             print(f"'{key}' pressed")
 
-        async def release(key):
+        def release(key):
             print(f"'{key}' released")
 
         listen_keyboard(
@@ -174,9 +174,8 @@ def listen_keyboard(
         max_thread_pool_workers: Define the number of workers in
             ThreadPoolExecutor, None means that a default value will get used.
             Will get ignored if sequential=True. Defaults to None.
-        sleep: asyncio.sleep() amount between starting the callbacks. Sleep
-            is not in use if neither of the callbacks are  asynchronous. Value
-            None will remove the asyncio.sleep() altogether. Defaults to 0.05.
+        sleep: asyncio.sleep() amount between attempted keyboard input reads.
+            Defaults to 0.01.
     """
 
     coro = listen_keyboard_manual(
@@ -208,8 +207,8 @@ async def listen_keyboard_manual(
     lower: bool = True,
     debug: bool = False,
     max_thread_pool_workers: Optional[int] = None,
-    sleep: Optional[float] = 0.05,
-):
+    sleep: float = 0.01,
+) -> None:
     """The same as :func:`~sshkeyboard.listen_keyboard`, but now the
     awaiting must be handled by the caller
 
@@ -269,18 +268,10 @@ async def listen_keyboard_manual(
     assert max_thread_pool_workers is None or isinstance(
         max_thread_pool_workers, int
     ), "'max_thread_pool_workers' has to be None or int"
-    assert sleep is None or isinstance(
-        sleep, (int, float)
-    ), "'sleep' has to be None or numeric"
+    assert isinstance(sleep, (int, float)), "'sleep' has to numeric"
 
     _running = True
     _should_run = True
-
-    # sleep not used without async callbacks
-    if not asyncio.iscoroutinefunction(
-        on_press
-    ) and not asyncio.iscoroutinefunction(on_release):
-        sleep = None
 
     # Create thread pool executor only if it will get used
     executor = None
@@ -314,12 +305,9 @@ async def listen_keyboard_manual(
     # Listen
     with _raw(sys.stdin), _nonblocking(sys.stdin):
         while _should_run:
-            state, should_sleep = await _react_to_input(state, options)
-            if sleep is not None:
-                if should_sleep:
-                    await asyncio.sleep(sleep)
-                else:
-                    await asyncio.sleep(0)  # Give turn to other async tasks
+            state = await _react_to_input(state, options)
+            await asyncio.sleep(sleep)
+
     # Cleanup
     if executor is not None:
         executor.shutdown()
@@ -327,7 +315,7 @@ async def listen_keyboard_manual(
     _should_run = False
 
 
-def stop_listening():
+def stop_listening() -> None:
     """Stops the ongoing keyboard listeners
 
     Can be called inside the callbacks or from outside. Does not do anything
@@ -450,15 +438,12 @@ def _read_and_parse_ansi(char):
 
 
 async def _react_to_input(state, options):
-    # Change to True if on_press or on_release callback is triggered
-    should_sleep = False
-
     # Read next character
     state.current = _read_chars(1)
 
     # Skip and continue if read failed
     if state.current is None:
-        return state, should_sleep
+        return state
 
     # Handle any character
     elif state.current != "":
@@ -468,7 +453,7 @@ async def _react_to_input(state, options):
             if state.current is None:
                 if options.debug:
                     print(f"Non-supported ansi char: {repr(raw)}")
-                return state, should_sleep
+                return state
         # Change some character representations to readable strings
         elif state.current in _CHAR_TO_READABLE:
             state.current = _CHAR_TO_READABLE[state.current]
@@ -480,17 +465,15 @@ async def _react_to_input(state, options):
         # Stop if until character has been read
         if options.until is not None and state.current == options.until:
             stop_listening()
-            return state, should_sleep
+            return state
 
         # Release state.previous if new pressed
         if state.previous != "" and state.current != state.previous:
             await options.on_release_callback(state.previous)
-            should_sleep = True
 
         # Press if new character, update state.previous
         if state.current != state.previous:
             await options.on_press_callback(state.current)
-            should_sleep = True
             state.initial_press_time = time()
             state.previous = state.current
 
@@ -507,18 +490,17 @@ async def _react_to_input(state, options):
         and time() - state.press_time > options.delay_other_chars
     ):
         await options.on_release_callback(state.previous)
-        should_sleep = True
         state.previous = state.current
 
-    return state, should_sleep
+    return state
 
 
 if __name__ == "__main__":
 
-    def press(key):
+    async def press(key):
         print(f"'{key}' pressed")
 
-    async def release(key):
+    def release(key):
         print(f"'{key}' released")
 
     # Sync version

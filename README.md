@@ -144,12 +144,7 @@ Then pressing `"a"`, `"s"` and `"d"` keys will log:
 ### Asyncio
 
 You can also use asynchronous functions as `on_press` / `on_release` callbacks
-with `listen_keyboard`.
-
-The use of asynchronous callbacks causes the `sleep` parameter to be taken
-into account. It defines the automatic `asyncio.sleep()` amount between the
-callbacks. If there aro no asynchronous callbacks, `sleep` parameter will
-be ignored and there are no `asyncio.sleep()`s between the callbacks.
+with `listen_keyboard`:
 
 ```python
 import asyncio
@@ -160,10 +155,7 @@ async def press(key):
     await asyncio.sleep(3)
     print(f"'{key}' slept")
 
-listen_keyboard(
-    on_press=press,
-    sleep=0.05,
-)
+listen_keyboard(on_press=press)
 ```
 
 > **NOTE** remember to use `await asyncio.sleep(...)` in async callbacks
@@ -297,6 +289,7 @@ Check out the full
 for more functions and parameters such as:
 
 - `lower` parameter
+- `sleep` parameter
 - `max_thread_pool_workers` parameter
 - `listen_keyboard_manual` function
 
