@@ -1,16 +1,13 @@
 # sshkeyboard
 
-The only keyboard event callback library that works in _all_ Unix
-environments.
+The only keyboard event callback library that works _everywhere_, even when
+used through an [SSH](https://en.wikipedia.org/wiki/Secure_Shell) connection
+(hence the name).
 
-It is suitable even when used through an
-[SSH](https://en.wikipedia.org/wiki/Secure_Shell) connection (hence the name),
-when using with headless computers/servers, or for example inside Windows
-Subsystem for Linux (WSL 2).
-
-One good use case is controlling some Raspberry Pi based robot or RC car
-through SSH. Note that this library can also be used locally without an SSH
-connection.
+It works with headless computers and servers, or for example inside Windows
+Subsystem for Linux (WSL 2). One good use case is controlling Raspberry Pi
+based robots or RC cars through SSH. Note that this library can also be used
+locally without an SSH connection.
 
 It does not depend on X server, uinput, root access (sudo) or
 any external dependencies.
@@ -60,14 +57,20 @@ $ python example.py
 
 ## How it works
 
-The library works without
+The sshkeyboard library works without
 [X server](https://en.wikipedia.org/wiki/X_Window_System)
-and [uinput](https://www.kernel.org/doc/html/v4.12/input/uinput.html)
-because it calls the events based on characters parsed from
-[sys.stdin](https://docs.python.org/3/library/sys.html#sys.stdin). This is
-done with [fcntl](https://docs.python.org/3/library/fcntl.html) and
+and [uinput](https://www.kernel.org/doc/html/v4.12/input/uinput.html).
+
+On Unix based systems (such as Linux, macOS) it works by parsing characters
+from [sys.stdin](https://docs.python.org/3/library/sys.html#sys.stdin). This
+is done with [fcntl](https://docs.python.org/3/library/fcntl.html) and
 [termios](https://docs.python.org/3/library/termios.html) standard library
 modules.
+
+On Windows [msvcrt](https://docs.python.org/3/library/msvcrt.html) standard
+library module is used to read user input. The Windows support is still new,
+so please create [an issue](https://github.com/ollipal/sshkeyboard/issues)
+if you run into problems.
 
 This behaviour allows it to work where other libraries like
 [pynput](#comparison-to-other-keyboard-libraries) or
@@ -82,15 +85,6 @@ it comes with some **limitations**, mainly:
    `Shift`, `Caps Lock`, `Alt` and `Windows`/`Command`/`Super` key. That is
    why this library does not attempt to parse those even if they could be
    technically be parsed in some cases
-3. `termios` and `fcntl` are not supported on Windows (except on WSL / WSL 2).
-   Note that you _can_ take a SSH connection from Windows with
-   CMD/PowerShell/PuTTY to a Unix machine, and `sshkeyboard` _will_ work. This
-   limitation means that the library does not work directly on Windows. If you
-   figure out a workaround to make this work on Windows, please make
-   [a pull request](https://github.com/ollipal/sshkeyboard/pulls)! If you need
-   direct Windows use, check
-   [pynput](#comparison-to-other-keyboard-libraries) or
-   [keyboard](#comparison-to-other-keyboard-libraries) libraries out.
 
 ## Advanced use
 

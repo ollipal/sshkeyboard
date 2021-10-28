@@ -17,14 +17,14 @@ def setup_testing():
     def _nonblocking(stream):
         yield
 
-    def _read_chars(amount):
+    def _read_char(debug):
         global i
         i += 1
         return return_chars[i % len(return_chars)]
 
     sshkeyboard._raw = _raw
     sshkeyboard._nonblocking = _nonblocking
-    sshkeyboard._read_chars = _read_chars
+    sshkeyboard._read_char = _read_char
 
 
 setup_testing()

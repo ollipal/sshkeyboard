@@ -4,12 +4,9 @@ __version__ = "2.2.0"
 
 import asyncio
 import concurrent.futures
-import fcntl
 import os
 import sys
-import termios
 import traceback
-import tty
 from contextlib import contextmanager
 from inspect import signature
 from platform import system
@@ -21,6 +18,16 @@ try:
     from ._asyncio_run_backport_36 import run36
 except ImportError:  # this allows local testing: python __init__.py
     from _asyncio_run_backport_36 import run36
+
+_is_windows = system().lower() == "windows"
+
+if _is_windows:
+    import msvcrt
+else:
+    import fcntl
+    import termios
+    import tty
+
 
 # Global state
 
@@ -35,7 +42,7 @@ _should_run = False
 # All possible ansi characters here:
 # https://github.com/prompt-toolkit/python-prompt-toolkit/blob/master/prompt_toolkit/input/ansi_escape_sequences.py
 # Listener does not support modifier keys for now
-_ANSI_CHAR_TO_READABLE = {
+_UNIX_ANSI_CHAR_TO_READABLE = {
     # 'Regular' characters
     "\x1b": "esc",
     "\x7f": "backspace",
@@ -104,12 +111,43 @@ _ANSI_CHAR_TO_READABLE = {
     "\x1b[24;2~": "f24",
 }
 
+_WIN_CHAR_TO_READABLE = {
+    "\x1b": "esc",
+    "\x08": "backspace",
+    "àR": "insert",
+    "àS": "delete",
+    "àI": "pageup",
+    "àQ": "pagedown",
+    "àG": "home",
+    "àO": "end",
+    "àH": "up",
+    "àP": "down",
+    "àM": "right",
+    "àK": "left",
+    "\x00;": "f1",
+    "\x00<": "f2",
+    "\x00=": "f3",
+    "\x00>": "f4",
+    "\x00?": "f5",
+    "\x00@": "f6",
+    "\x00A": "f7",
+    "\x00B": "f8",
+    "\x00C": "f9",
+    "\x00D": "f10",
+    # "": "f11", ?
+    "à†": "f12",
+}
+
 # Some non-ansi characters that need a readable representation
 _CHAR_TO_READABLE = {
     "\t": "tab",
     "\n": "enter",
+    "\r": "enter",
     " ": "space",
 }
+
+_WIN_SPECIAL_CHAR_STARTS = {"\x1b", "\x08", "\x00", "\xe0"}
+_WIN_REQUIRES_TWO_READS_STARTS = {"\x00", "\xe0"}
 
 
 def listen_keyboard(
@@ -191,7 +229,7 @@ def listen_keyboard(
         sleep,
     )
 
-    if _is_python_36:
+    if _is_python_36():
         run36(coro)
     else:
         asyncio.run(coro)
@@ -234,10 +272,7 @@ async def listen_keyboard_manual(
 
     global _running
     global _should_run
-    # Check system
-    assert (
-        system().lower() != "windows"
-    ), "sshkeyboard does not support Windows"
+    # Check the system
     assert sys.version_info >= (3, 6), (
         "sshkeyboard requires Python version 3.6+, you have "
         f"{sys.version_info.major}.{sys.version_info.minor}"
@@ -289,10 +324,12 @@ async def listen_keyboard_manual(
         on_press_callback=_callback(on_press, sequential, executor),
         on_release_callback=_callback(on_release, sequential, executor),
         until=until,
+        sequential=sequential,
         delay_second_char=delay_second_char,
         delay_other_chars=delay_other_chars,
         lower=lower,
         debug=debug,
+        sleep=sleep,
     )
     # State does change
     state = SimpleNamespace(
@@ -410,6 +447,11 @@ def _callback(cb_function, sequential, executor):
 # http://ballingt.com/_nonblocking-stdin-in-python-3/
 @contextmanager
 def _raw(stream):
+    # Not required on windows
+    if _is_windows:
+        yield
+        return
+
     original_stty = termios.tcgetattr(stream)
     try:
         tty.setcbreak(stream)
@@ -420,6 +462,11 @@ def _raw(stream):
 
 @contextmanager
 def _nonblocking(stream):
+    # Not required on windows
+    if _is_windows:
+        yield
+        return
+
     fd = stream.fileno()
     orig_fl = fcntl.fcntl(fd, fcntl.F_GETFL)
     try:
@@ -429,7 +476,62 @@ def _nonblocking(stream):
         fcntl.fcntl(fd, fcntl.F_SETFL, orig_fl)
 
 
-def _read_chars(amount):
+def _read_char(debug):
+    if _is_windows:
+        return _read_char_win(debug)
+    else:
+        return _read_char_unix(debug)
+
+
+def _read_char_win(debug):
+    # Return if nothing to read
+    if not msvcrt.kbhit():
+        return ""
+
+    char = msvcrt.getwch()
+    if char in _WIN_SPECIAL_CHAR_STARTS:
+        # Check if requires one more read
+        if char in _WIN_REQUIRES_TWO_READS_STARTS:
+            char += msvcrt.getwch()
+
+        if char in _WIN_CHAR_TO_READABLE:
+            return _WIN_CHAR_TO_READABLE[char]
+        else:
+            if debug:
+                print(f"Non-supported win char: {repr(char)}")
+            return None
+
+    # Change some character representations to readable strings
+    elif char in _CHAR_TO_READABLE:
+        char = _CHAR_TO_READABLE[char]
+
+    return char
+
+
+def _read_char_unix(debug):
+    char = _read_unix_stdin(1)
+
+    # Skip and continue if read failed
+    if char is None:
+        return None
+
+    # Handle any character
+    elif char != "":
+        # Read more if ansi character, skip and continue if unknown
+        if _is_unix_ansi(char):
+            char, raw = _read_and_parse_unix_ansi(char)
+            if char is None:
+                if debug:
+                    print(f"Non-supported ansi char: {repr(raw)}")
+                return None
+        # Change some character representations to readable strings
+        elif char in _CHAR_TO_READABLE:
+            char = _CHAR_TO_READABLE[char]
+
+    return char
+
+
+def _read_unix_stdin(amount):
     try:
         return sys.stdin.read(amount)
     except IOError:
@@ -437,22 +539,22 @@ def _read_chars(amount):
 
 
 # '\x' at the start is a good indicator for ansi character
-def _is_ansi(char):
+def _is_unix_ansi(char):
     rep = repr(char)
     return len(rep) >= 2 and rep[1] == "\\" and rep[2] == "x"
 
 
-def _read_and_parse_ansi(char):
-    char += _read_chars(5)
-    if char in _ANSI_CHAR_TO_READABLE:
-        return _ANSI_CHAR_TO_READABLE[char], char
+def _read_and_parse_unix_ansi(char):
+    char += _read_unix_stdin(5)
+    if char in _UNIX_ANSI_CHAR_TO_READABLE:
+        return _UNIX_ANSI_CHAR_TO_READABLE[char], char
     else:
         return None, char
 
 
 async def _react_to_input(state, options):
     # Read next character
-    state.current = _read_chars(1)
+    state.current = _read_char(options.debug)
 
     # Skip and continue if read failed
     if state.current is None:
@@ -460,16 +562,6 @@ async def _react_to_input(state, options):
 
     # Handle any character
     elif state.current != "":
-        # Read more if ansi character, skip and continue if unknown
-        if _is_ansi(state.current):
-            state.current, raw = _read_and_parse_ansi(state.current)
-            if state.current is None:
-                if options.debug:
-                    print(f"Non-supported ansi char: {repr(raw)}")
-                return state
-        # Change some character representations to readable strings
-        elif state.current in _CHAR_TO_READABLE:
-            state.current = _CHAR_TO_READABLE[state.current]
 
         # Make lower case if requested
         if options.lower:
@@ -483,6 +575,10 @@ async def _react_to_input(state, options):
         # Release state.previous if new pressed
         if state.previous != "" and state.current != state.previous:
             await options.on_release_callback(state.previous)
+            # Weirdly on_release fires too late on Windows unless there is
+            # an extra sleep here when sequential=False...
+            if _is_windows and not options.sequential:
+                await asyncio.sleep(options.sleep)
 
         # Press if new character, update state.previous
         if state.current != state.previous:
