@@ -1,5 +1,11 @@
 # Changelog
 
+## 2.3.0
+
+Windows support added
+
+- Works now on Windows in addition to Unix systems
+
 ## 2.2.0
 
 `sleep` affects now between every read attempt instead of between callbacks
