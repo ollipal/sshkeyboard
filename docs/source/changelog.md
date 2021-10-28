@@ -1,5 +1,11 @@
 # Changelog
 
+## 2.3.1
+
+Release to get the PyPI classifiers updated
+
+- pyproject.toml classifiers updated
+
 ## 2.3.0
 
 Windows support added
