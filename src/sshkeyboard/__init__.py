@@ -447,7 +447,7 @@ def _callback(cb_function, sequential, executor):
 # http://ballingt.com/_nonblocking-stdin-in-python-3/
 @contextmanager
 def _raw(stream):
-    # Not required on windows
+    # Not required on Windows
     if _is_windows:
         yield
         return
@@ -462,7 +462,7 @@ def _raw(stream):
 
 @contextmanager
 def _nonblocking(stream):
-    # Not required on windows
+    # Not required on Windows
     if _is_windows:
         yield
         return
@@ -612,8 +612,7 @@ if __name__ == "__main__":
     def release(key):
         print(f"'{key}' released")
 
-    # Sync version
-    print("listening_keyboard(), press keys, and press 'esc' to exit")
+    print("listening keyboard, press keys, and press 'esc' to exit")
     listen_keyboard(on_press=press, on_release=release)
     # ^this is the same as
     # asyncio.run(listen_keyboard_manual(press, release))
