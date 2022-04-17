@@ -235,6 +235,9 @@ def listen_keyboard(
         asyncio.run(coro)
 
 
+_executor: Optional[concurrent.futures.ThreadPoolExecutor] = None
+
+
 async def listen_keyboard_manual(
     on_press: Optional[Callable[[str], Any]] = None,
     on_release: Optional[Callable[[str], Any]] = None,
@@ -272,6 +275,7 @@ async def listen_keyboard_manual(
 
     global _running
     global _should_run
+    global _executor
     # Check the system
     assert sys.version_info >= (3, 6), (
         "sshkeyboard requires Python version 3.6+, you have "
@@ -309,20 +313,20 @@ async def listen_keyboard_manual(
     _should_run = True
 
     # Create thread pool executor only if it will get used
-    executor = None
+    # executor = None
     if not sequential and (
         not asyncio.iscoroutinefunction(on_press)
         or not asyncio.iscoroutinefunction(on_release)
     ):
-        executor = concurrent.futures.ThreadPoolExecutor(
+        _executor = concurrent.futures.ThreadPoolExecutor(
             max_workers=max_thread_pool_workers
         )
 
     # Package parameters into namespaces so they are easier to pass around
     # Options do not change
     options = SimpleNamespace(
-        on_press_callback=_callback(on_press, sequential, executor),
-        on_release_callback=_callback(on_release, sequential, executor),
+        on_press_callback=_callback(on_press, sequential, _executor),
+        on_release_callback=_callback(on_release, sequential, _executor),
         until=until,
         sequential=sequential,
         delay_second_char=delay_second_char,
@@ -345,9 +349,16 @@ async def listen_keyboard_manual(
             state = await _react_to_input(state, options)
             await asyncio.sleep(sleep)
 
+    _clean_up()
+
+
+def _clean_up():
+    global _running
+    global _should_run
+    global _executor
     # Cleanup
-    if executor is not None:
-        executor.shutdown()
+    if _executor is not None:
+        _executor.shutdown()
     _running = False
     _should_run = False
 
@@ -374,6 +385,7 @@ def stop_listening() -> None:
     if _running:
         global _should_run
         _should_run = False
+        _clean_up()
 
 
 def _is_python_36():
@@ -447,7 +459,7 @@ def _callback(cb_function, sequential, executor):
 # http://ballingt.com/_nonblocking-stdin-in-python-3/
 @contextmanager
 def _raw(stream):
-    # Not required on Windows
+    # Not required on windows
     if _is_windows:
         yield
         return
@@ -462,7 +474,7 @@ def _raw(stream):
 
 @contextmanager
 def _nonblocking(stream):
-    # Not required on Windows
+    # Not required on windows
     if _is_windows:
         yield
         return
@@ -612,7 +624,8 @@ if __name__ == "__main__":
     def release(key):
         print(f"'{key}' released")
 
-    print("listening keyboard, press keys, and press 'esc' to exit")
+    # Sync version
+    print("listening_keyboard(), press keys, and press 'esc' to exit")
     listen_keyboard(on_press=press, on_release=release)
     # ^this is the same as
     # asyncio.run(listen_keyboard_manual(press, release))
