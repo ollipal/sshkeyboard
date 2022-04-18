@@ -2,4 +2,4 @@
 
 __version__ = "3.0.0"
 
-from .key_listener import *
+from .key_listener import Key, KeyListener

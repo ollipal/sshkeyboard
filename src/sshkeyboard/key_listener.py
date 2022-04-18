@@ -1,284 +1,34 @@
 """Key handler module."""
-
-
-# Readable representations for selected ansi characters
-# All possible ansi characters here:
-# https://github.com/prompt-toolkit/python-prompt-toolkit/blob/master/prompt_toolkit/input/ansi_escape_sequences.py
-# Listener does not support modifier keys for now
 import asyncio
 import concurrent.futures
-import os
 import sys
-from contextlib import contextmanager
 from dataclasses import InitVar, dataclass
 from platform import system
 from time import time
 from typing import (
-    IO,
     Any,
     Awaitable,
     Callable,
     Coroutine,
     Dict,
-    List,
     Optional,
     TypeAlias,
     Union,
 )
+
+from .char_reader import CharReaderFactory
+from .context_managers import nonblocking, raw
+from .errors import MultipleListenerError
 
 try:
     from ._asyncio_run_backport_36 import run36
 except ImportError:  # this allows local testing: python __init__.py
     from _asyncio_run_backport_36 import run36  # type:ignore
 
-_is_windows = system().lower() == "windows"
-
-if _is_windows:
-    import msvcrt
-else:
-    import fcntl
-    import termios
-    import tty
 
 Key: TypeAlias = str
 CallbackFunction: TypeAlias = Callable[[Key], Any]
-
-_UNIX_ANSI_CHAR_TO_READABLE = {
-    # 'Regular' characters
-    "\x1b": "esc",
-    "\x7f": "backspace",
-    "\x1b[2~": "insert",
-    "\x1b[3~": "delete",
-    "\x1b[5~": "pageup",
-    "\x1b[6~": "pagedown",
-    "\x1b[H": "home",
-    "\x1b[F": "end",
-    "\x1b[A": "up",
-    "\x1b[B": "down",
-    "\x1b[C": "right",
-    "\x1b[D": "left",
-    "\x1bOP": "f1",
-    "\x1bOQ": "f2",
-    "\x1bOR": "f3",
-    "\x1bOS": "f4",
-    "\x1b[15~": "f5",
-    "\x1b[17~": "f6",
-    "\x1b[18~": "f7",
-    "\x1b[19~": "f8",
-    "\x1b[20~": "f9",
-    "\x1b[21~": "f10",
-    "\x1b[23~": "f11",
-    "\x1b[24~": "f12",
-    "\x1b[25~": "f13",
-    "\x1b[26~": "f14",
-    "\x1b[28~": "f15",
-    "\x1b[29~": "f16",
-    "\x1b[31~": "f17",
-    "\x1b[32~": "f18",
-    "\x1b[33~": "f19",
-    "\x1b[34~": "f20",
-    # Special/duplicate:
-    # Tmux, Emacs
-    "\x1bOH": "home",
-    "\x1bOF": "end",
-    "\x1bOA": "up",
-    "\x1bOB": "down",
-    "\x1bOC": "right",
-    "\x1bOD": "left",
-    # Rrvt
-    "\x1b[1~": "home",
-    "\x1b[4~": "end",
-    "\x1b[11~": "f1",
-    "\x1b[12~": "f2",
-    "\x1b[13~": "f3",
-    "\x1b[14~": "f4",
-    # Linux console
-    "\x1b[[A": "f1",
-    "\x1b[[B": "f2",
-    "\x1b[[C": "f3",
-    "\x1b[[D": "f4",
-    "\x1b[[E": "f5",
-    # Xterm
-    "\x1b[1;2P": "f13",
-    "\x1b[1;2Q": "f14",
-    "\x1b[1;2S": "f16",
-    "\x1b[15;2~": "f17",
-    "\x1b[17;2~": "f18",
-    "\x1b[18;2~": "f19",
-    "\x1b[19;2~": "f20",
-    "\x1b[20;2~": "f21",
-    "\x1b[21;2~": "f22",
-    "\x1b[23;2~": "f23",
-    "\x1b[24;2~": "f24",
-}
-
-_WIN_CHAR_TO_READABLE = {
-    "\x1b": "esc",
-    "\x08": "backspace",
-    "àR": "insert",
-    "àS": "delete",
-    "àI": "pageup",
-    "àQ": "pagedown",
-    "àG": "home",
-    "àO": "end",
-    "àH": "up",
-    "àP": "down",
-    "àM": "right",
-    "àK": "left",
-    "\x00;": "f1",
-    "\x00<": "f2",
-    "\x00=": "f3",
-    "\x00>": "f4",
-    "\x00?": "f5",
-    "\x00@": "f6",
-    "\x00A": "f7",
-    "\x00B": "f8",
-    "\x00C": "f9",
-    "\x00D": "f10",
-    # "": "f11", ?
-    "à†": "f12",
-}
-
-# Some non-ansi characters that need a readable representation
-_CHAR_TO_READABLE = {
-    "\t": "tab",
-    "\n": "enter",
-    "\r": "enter",
-    " ": "space",
-}
-
-_WIN_SPECIAL_CHAR_STARTS = {"\x1b", "\x08", "\x00", "\xe0"}
-_WIN_REQUIRES_TWO_READS_STARTS = {"\x00", "\xe0"}
-
-
-def _is_python_36():
-    return sys.version_info.major == 3 and sys.version_info.minor == 6
-
-
-def _done(
-    task: Union[asyncio.Future[Any], concurrent.futures.Future[None]]
-) -> None:
-    if not task.cancelled():
-        ex = task.exception()
-        if ex is not None:
-            raise ex
-            # traceback.print_exception(type(ex), ex, ex.__traceback__)
-
-
-# Raw and _nonblocking inspiration from:
-# http://ballingt.com/_nonblocking-stdin-in-python-3/
-@contextmanager
-def _raw(stream: IO[Any]):
-    # Not required on windows
-    if _is_windows:
-        yield
-        return
-
-    original_stty: List[Any] = termios.tcgetattr(stream)  # type: ignore
-    try:
-        tty.setcbreak(stream)  # type: ignore
-        yield
-    finally:
-        termios.tcsetattr(  # type: ignore
-            stream, termios.TCSANOW, original_stty  # type: ignore
-        )
-
-
-@contextmanager
-def _nonblocking(stream: IO[Any]):
-    # Not required on windows
-    if _is_windows:
-        yield
-        return
-
-    fd = stream.fileno()
-    orig_fl = fcntl.fcntl(fd, fcntl.F_GETFL)  # type: ignore
-    try:
-        fcntl.fcntl(fd, fcntl.F_SETFL, orig_fl | os.O_NONBLOCK)  # type: ignore
-        yield
-    finally:
-        fcntl.fcntl(fd, fcntl.F_SETFL, orig_fl)  # type: ignore
-
-
-class MultipleListenerError(Exception):
-    pass
-
-
-def _read_char(debug: bool) -> Optional[str]:
-    if _is_windows:
-        return _read_char_win(debug)
-    else:
-        return _read_char_unix(debug)
-
-
-def _read_char_win(debug: bool) -> Optional[str]:
-    # Return if nothing to read
-    if not msvcrt.kbhit():
-        return ""
-
-    char = msvcrt.getwch()
-    if char in _WIN_SPECIAL_CHAR_STARTS:
-        # Check if requires one more read
-        if char in _WIN_REQUIRES_TWO_READS_STARTS:
-            char += msvcrt.getwch()
-
-        if char in _WIN_CHAR_TO_READABLE:
-            return _WIN_CHAR_TO_READABLE[char]
-        else:
-            if debug:
-                print(f"Non-supported win char: {repr(char)}")
-            return None
-
-    # Change some character representations to readable strings
-    elif char in _CHAR_TO_READABLE:
-        char = _CHAR_TO_READABLE[char]
-
-    return char
-
-
-def _read_unix_stdin(amount: int) -> str:
-    try:
-        return sys.stdin.read(amount)
-    except IOError:
-        return ""
-
-
-# '\x' at the start is a good indicator for ansi character
-def _is_unix_ansi(char: str):
-    rep = repr(char)
-    return len(rep) >= 2 and rep[1] == "\\" and rep[2] == "x"
-
-
-def _read_and_parse_unix_ansi(char: str):
-    char += _read_unix_stdin(5)
-    if char in _UNIX_ANSI_CHAR_TO_READABLE:
-        return _UNIX_ANSI_CHAR_TO_READABLE[char], char
-    else:
-        return None, char
-
-
-def _read_char_unix(debug: bool) -> Optional[str]:
-    raw: Any
-    char: Optional[str] = _read_unix_stdin(1)
-
-    # Skip and continue if read failed
-    if char is None:
-        return None
-
-    # Handle any character
-    elif char != "":
-        # Read more if ansi character, skip and continue if unknown
-        if _is_unix_ansi(char):
-            char, raw = _read_and_parse_unix_ansi(char)
-            if char is None:
-                if debug:
-                    print(f"Non-supported ansi char: {repr(raw)}")
-                return None
-        # Change some character representations to readable strings
-        elif char in _CHAR_TO_READABLE:
-            char = _CHAR_TO_READABLE[char]
-
-    return char
+_is_windows = system().lower() == "windows"
 
 
 @dataclass
@@ -338,6 +88,7 @@ class KeyListener:
         self.on_release = self._callback(on_release_func)
         self.executor: Optional[concurrent.futures.ThreadPoolExecutor] = None
         self._running = False
+        self.char_reader = CharReaderFactory.create()
         # Create thread pool executor only if it will get used
         # executor = None
         if not self.sequential and (
@@ -352,6 +103,16 @@ class KeyListener:
         self, cb_function: Optional[CallbackFunction]
     ) -> Callable[[str], Coroutine[Any, Any, Any]]:
         async def _cb(key: Key):
+            def _done(
+                task: Union[
+                    asyncio.Future[Any], concurrent.futures.Future[None]
+                ]
+            ) -> None:
+                if not task.cancelled():
+                    ex = task.exception()
+                    if ex is not None:
+                        raise ex
+
             if cb_function is None:
                 return
 
@@ -410,7 +171,8 @@ class KeyListener:
 
         coro = self.listen_keyboard_manual()
 
-        if _is_python_36():
+        # if python is version 3.6
+        if sys.version_info.major == 3 and sys.version_info.minor == 6:
             run36(coro)
         else:
             asyncio.run(coro)
@@ -448,7 +210,7 @@ class KeyListener:
         if self.on_press is None and self.on_release is None:
             raise ValueError("Either on_press or on_release should be defined")
         # Listen
-        with _raw(sys.stdin), _nonblocking(sys.stdin):
+        with raw(sys.stdin), nonblocking(sys.stdin):
             state: Dict[str, Any] = {}
             while self.running:
                 state = await self._react_to_input(**state)
@@ -464,7 +226,7 @@ class KeyListener:
         current: Optional[str] = "",
     ) -> Dict[str, Any]:
         # Read next character
-        current = _read_char(self.debug)
+        current = self.char_reader.read(self.debug)
 
         # Skip and continue if read failed
         if current is None:
