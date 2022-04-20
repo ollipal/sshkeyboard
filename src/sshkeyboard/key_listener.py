@@ -5,16 +5,45 @@ import sys
 from dataclasses import InitVar, dataclass
 from platform import system
 from time import time
-from typing import (
-    Any,
-    Awaitable,
-    Callable,
-    Coroutine,
-    Dict,
-    Optional,
-    TypeAlias,
-    Union,
-)
+from typing import TypeAlias, TypeVar
+
+try:
+    # Import PEP-agnostic type hints from "beartype.typing", a stand-in
+    # replacement for the standard "typing" module providing improved forward
+    # compatibility with future Python releases.
+    # type ignore for pylance error, opened issue:
+    # https://github.com/beartype/beartype/issues/126
+    from beartype import beartype  # type: ignore
+
+    # TypeAlias, seems to cause issues with pylance
+    # opened issue https://github.com/beartype/beartype/issues/127
+    # from beartype.typing import (
+    #     Any,
+    #     Awaitable,
+    #     Callable,
+    #     Coroutine,
+    #     Dict,
+    #     Optional,
+    #     Union,
+    # )
+except ModuleNotFoundError:
+    from typing import (
+        Any,
+        Awaitable,
+        Callable,
+        Coroutine,
+        Dict,
+        Optional,
+        Union,
+    )
+
+    FuncT = TypeVar("FuncT", bound=Callable[..., Any])
+
+    def noop_dec(func: FuncT) -> FuncT:
+        return func
+
+    beartype: Callable[..., Any] = noop_dec  # type: ignore[no-redef]
+
 
 from .char_reader import CharReaderFactory
 from .context_managers import nonblocking, raw
@@ -31,6 +60,8 @@ CallbackFunction: TypeAlias = Callable[[Key], Any]
 _is_windows = system().lower() == "windows"
 
 
+# runtime type check, similar to original assert but more robust.
+@beartype
 @dataclass
 class KeyListener:
     """Key listener class.
