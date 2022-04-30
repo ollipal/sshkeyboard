@@ -5,7 +5,7 @@
 import os
 from contextlib import contextmanager
 from platform import system
-from typing import IO, Any, List
+from typing import IO, Any, Generator, List
 
 _is_windows = system().lower() == "windows"
 
@@ -16,7 +16,8 @@ if not _is_windows:
 
 
 @contextmanager
-def raw(stream: IO[Any]):
+def raw(stream: IO[Any]) -> Generator[None, None, None]:
+    """Raw stdin from steam."""
     # Not required on windows
     if _is_windows:
         yield
@@ -28,12 +29,15 @@ def raw(stream: IO[Any]):
         yield
     finally:
         termios.tcsetattr(  # type: ignore
-            stream, termios.TCSANOW, original_stty  # type: ignore
+            stream,
+            termios.TCSANOW,  # type: ignore
+            original_stty,  # type: ignore
         )
 
 
 @contextmanager
-def nonblocking(stream: IO[Any]):
+def nonblocking(stream: IO[Any]) -> Generator[None, None, None]:
+    """Non-blocking stdin from steam."""
     # Not required on windows
     if _is_windows:
         yield

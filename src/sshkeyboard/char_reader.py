@@ -4,7 +4,7 @@ from __future__ import annotations
 import sys
 from abc import ABC, abstractmethod
 from platform import system
-from typing import Any, Optional
+from typing import Any, Optional, Union
 
 from . import char_maps as cmap
 
@@ -15,13 +15,19 @@ if _is_windows:
 
 
 class CharReader(ABC):
+    """Abstract base class for character reader."""
+
     @abstractmethod
     def read(self, debug: bool = False) -> Optional[str]:
+        """Read a character from input."""
         ...
 
 
 class WinCharReader(CharReader):
+    """Windows character reader."""
+
     def read(self, debug: bool = False) -> Optional[str]:
+        """Read a character from input."""
         # Return if nothing to read
         if not msvcrt.kbhit():
             return ""
@@ -47,7 +53,10 @@ class WinCharReader(CharReader):
 
 
 class UnixCharReader(CharReader):
+    """Unix / Linix character reader."""
+
     def read(self, debug: bool = False) -> Optional[str]:
+        """Read a character from input."""
         raw: Any
         char: Optional[str] = self._read_unix_stdin(1)
 
@@ -77,11 +86,14 @@ class UnixCharReader(CharReader):
             return ""
 
     # '\x' at the start is a good indicator for ansi character
-    def _is_unix_ansi(self, char: str):
+    def _is_unix_ansi(self, char: str) -> bool:
         rep = repr(char)
         return len(rep) >= 2 and rep[1] == "\\" and rep[2] == "x"
 
-    def _read_and_parse_unix_ansi(self, char: str):
+    def _read_and_parse_unix_ansi(
+        self,
+        char: str,
+    ) -> Union[tuple[str, str], tuple[None, str]]:
         char += self._read_unix_stdin(5)
         if char in cmap.UNIX_ANSI_CHAR_TO_READABLE:
             return cmap.UNIX_ANSI_CHAR_TO_READABLE[char], char
@@ -90,8 +102,11 @@ class UnixCharReader(CharReader):
 
 
 class CharReaderFactory:
+    """Factory that returns the correct reader for the system."""
+
     @staticmethod
     def create() -> CharReader:
+        """Return system independent character reader."""
         if system().lower() == "windows":
             return WinCharReader()
         return UnixCharReader()

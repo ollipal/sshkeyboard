@@ -17,17 +17,7 @@ try:
 
     # TypeAlias, seems to cause issues with pylance
     # opened issue https://github.com/beartype/beartype/issues/127
-    # from beartype.typing import (
-    #     Any,
-    #     Awaitable,
-    #     Callable,
-    #     Coroutine,
-    #     Dict,
-    #     Optional,
-    #     Union,
-    # )
-except ModuleNotFoundError:
-    from typing import (
+    from beartype.typing import (
         Any,
         Awaitable,
         Callable,
@@ -36,13 +26,15 @@ except ModuleNotFoundError:
         Optional,
         Union,
     )
+except ModuleNotFoundError:
+    from typing import Any, Awaitable, Callable, Coroutine, Dict, Optional, Union
 
     FuncT = TypeVar("FuncT", bound=Callable[..., Any])
 
-    def noop_dec(func: FuncT) -> FuncT:
+    def _noop_dec(func: FuncT) -> FuncT:
         return func
 
-    beartype: Callable[..., Any] = noop_dec  # type: ignore[no-redef]
+    beartype: Callable[..., Any] = _noop_dec  # type: ignore[no-redef]
 
 
 from .char_reader import CharReaderFactory
@@ -50,7 +42,7 @@ from .context_managers import nonblocking, raw
 from .errors import MultipleListenerError
 
 try:
-    from ._asyncio_run_backport_36 import run36
+    from ._asyncio_run_backport_36 import run36  # type: ignore
 except ImportError:  # this allows local testing: python __init__.py
     from _asyncio_run_backport_36 import run36  # type:ignore
 
@@ -109,11 +101,12 @@ class KeyListener:
         on_press_func: Optional[CallbackFunction],
         on_release_func: Optional[CallbackFunction],
     ) -> None:
+        """Set on_press and on_release after dataclass init."""
         # Check the system
         if sys.version_info < (3, 6):
             raise RuntimeError(
-                "sshkeyboard requires Python version 3.6+, you have "
-                f"{sys.version_info.major}.{sys.version_info.minor}"
+                f"{__package__} requires Python version 3.6+, you have "
+                f"{sys.version_info.major}.{sys.version_info.minor}",
             )
         self.on_press = self._callback(on_press_func)
         self.on_release = self._callback(on_release_func)
@@ -127,17 +120,16 @@ class KeyListener:
             or not asyncio.iscoroutinefunction(self.on_release)
         ):
             self._executor = concurrent.futures.ThreadPoolExecutor(
-                max_workers=self.max_thread_pool_workers
+                max_workers=self.max_thread_pool_workers,
             )
 
     def _callback(
-        self, cb_function: Optional[CallbackFunction]
+        self,
+        cb_function: Optional[CallbackFunction],
     ) -> Callable[[str], Coroutine[Any, Any, Any]]:
-        async def _cb(key: Key):
+        async def _cb(key: Key) -> None:
             def _done(
-                task: Union[
-                    asyncio.Future[Any], concurrent.futures.Future[None]
-                ]
+                task: Union[asyncio.Future[Any], concurrent.futures.Future[None]],
             ) -> None:
                 if not task.cancelled():
                     ex = task.exception()
@@ -155,9 +147,7 @@ class KeyListener:
                     cb_function(key)
             else:
                 if asyncio.iscoroutinefunction(cb_function):
-                    task: asyncio.Task[None] = asyncio.create_task(
-                        cb_function(key)
-                    )
+                    task: asyncio.Task[None] = asyncio.create_task(cb_function(key))
                     task.add_done_callback(_done)
                 else:
                     future = self.executor.submit(cb_function, key)
@@ -167,14 +157,13 @@ class KeyListener:
 
     @property
     def running(self) -> bool:
+        """Return current status of if the listener is running."""
         return self._running
 
     def listen_keyboard(
         self,
     ) -> None:
-
-        """Listen for keyboard events and fire `on_press` and `on_release`
-         callback functions
+        """Listen for events and fire `on_press` and `on_release` cb functions.
 
         Supports asynchronous callbacks also.
 
@@ -188,18 +177,20 @@ class KeyListener:
 
             from sshkeyboard import listen_keyboard
 
+
             async def press(key):
                 print(f"'{key}' pressed")
 
+
             def release(key):
                 print(f"'{key}' released")
+
 
             listen_keyboard(
                 on_press=press,
                 on_release=release,
             )
         """
-
         coro = self.listen_keyboard_manual()
 
         # if python is version 3.6
@@ -211,7 +202,9 @@ class KeyListener:
     async def listen_keyboard_manual(
         self,
     ) -> None:
-        """The same as :func:`~sshkeyboard.listen_keyboard`, but now the
+        """Listen for keyboard events, awaiting must be handled by caller.
+
+        The same as :func:`~sshkeyboard.listen_keyboard`, but now the
         awaiting must be handled by the caller
 
         .. code-block:: python
@@ -251,14 +244,18 @@ class KeyListener:
 
     async def _react_to_input(
         self,
-        press_time: float = time(),
-        initial_press_time: float = time(),
+        press_time: Optional[float] = None,
+        initial_press_time: Optional[float] = None,
         previous: str = "",
         current: Optional[str] = "",
     ) -> Dict[str, Any]:
         # Read next character
         current = self.char_reader.read(self.debug)
 
+        if press_time is None:
+            press_time = time()
+        if initial_press_time is None:
+            initial_press_time = time()
         # Skip and continue if read failed
         if current is None:
             return {
@@ -321,13 +318,13 @@ class KeyListener:
             "current": current,
         }
 
-    def _clean_up(self):
+    def _clean_up(self) -> None:
         if self.executor is not None:
             self.executor.shutdown()
         self._running = False
 
     def stop_listening(self) -> None:
-        """Stops the ongoing keyboard listeners
+        """Stop the ongoing keyboard listeners.
 
         Can be called inside the callbacks or from outside. Does not do
         anything if listener is not running.
@@ -339,10 +336,12 @@ class KeyListener:
 
             from sshkeyboard import listen_keyboard, stop_listening
 
+
             def press(key):
                 print(f"'{key}' pressed")
                 if key == "z":
                     stop_listening()
+
 
             listen_keyboard(on_press=press)
         """

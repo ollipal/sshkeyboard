@@ -1,6 +1,8 @@
+# type: ignore
 """
 Backport of the asyncio.runners module from Python 3.7 to Python 3.6.
 """
+# flake8: noqa
 # Source:
 # https://gist.github.com/nickdavies/4a37c6cd9dcc7041fddd2d2a81cee383
 # https://github.com/python/cpython/blob/a4afcdfa55ddffa4b9ae3b0cf101628c7bff4102/Lib/asyncio/runners.py
@@ -20,9 +22,7 @@ from typing import Any, Awaitable, Coroutine, TypeVar, Union
 try:
     from asyncio import get_running_loop  # noqa Python >=3.7
 except ImportError:  # pragma: no cover
-    from asyncio.events import (
-        _get_running_loop as get_running_loop,  # pragma: no cover
-    )
+    from asyncio.events import _get_running_loop as get_running_loop  # pragma: no cover
 
 __all__ = ("run36",)  # noqa
 _T = TypeVar("_T")
@@ -73,7 +73,7 @@ def _patch_loop(loop):
 def run36(
     main: Union[Coroutine[Any, None, _T], Awaitable[_T]],
     *,
-    debug: bool = False
+    debug: bool = False,
 ) -> _T:
     """Run a coroutine.
     This function runs the passed coroutine, taking care of
@@ -97,9 +97,7 @@ def run36(
     except RuntimeError:
         loop = None
     if loop is not None:
-        raise RuntimeError(
-            "asyncio.run() cannot be called from a running event loop"
-        )
+        raise RuntimeError("asyncio.run() cannot be called from a running event loop")
 
     if not asyncio.iscoroutine(main):
         raise ValueError("a coroutine was expected, got {!r}".format(main))
@@ -130,7 +128,7 @@ def _cancel_all_tasks(loop, tasks):
         task.cancel()
 
     loop.run_until_complete(
-        asyncio.gather(*to_cancel, loop=loop, return_exceptions=True)
+        asyncio.gather(*to_cancel, loop=loop, return_exceptions=True),
     )
 
     for task in to_cancel:
@@ -139,10 +137,8 @@ def _cancel_all_tasks(loop, tasks):
         if task.exception() is not None:
             loop.call_exception_handler(
                 {
-                    "message": (
-                        "unhandled exception during asyncio.run() shutdown"
-                    ),
+                    "message": "unhandled exception during asyncio.run() shutdown",
                     "exception": task.exception(),
                     "task": task,
-                }
+                },
             )
