@@ -6,7 +6,7 @@ from abc import ABC, abstractmethod
 from platform import system
 from typing import Any, Optional, Union
 
-from . import char_maps as cmap
+from .char_maps import CharMaps as cMap
 
 _is_windows = system().lower() == "windows"
 
@@ -33,21 +33,21 @@ class WinCharReader(CharReader):
             return ""
 
         char = msvcrt.getwch()
-        if char in cmap.WIN_SPECIAL_CHAR_STARTS:
+        if char in cMap.WIN_SPECIAL_CHAR_STARTS:
             # Check if requires one more read
-            if char in cmap.WIN_REQUIRES_TWO_READS_STARTS:
+            if char in cMap.WIN_REQUIRES_TWO_READS_STARTS:
                 char += msvcrt.getwch()
 
-            if char in cmap.WIN_CHAR_TO_READABLE:
-                return cmap.WIN_CHAR_TO_READABLE[char]
+            if char in cMap.WIN_CHAR_TO_READABLE:
+                return cMap.WIN_CHAR_TO_READABLE[char]
             else:
                 if debug:
                     print(f"Non-supported win char: {repr(char)}")
                 return None
 
         # Change some character representations to readable strings
-        elif char in cmap.CHAR_TO_READABLE:
-            char = cmap.CHAR_TO_READABLE[char]
+        elif char in cMap.CHAR_TO_READABLE:
+            char = cMap.CHAR_TO_READABLE[char]
 
         return char
 
@@ -74,8 +74,8 @@ class UnixCharReader(CharReader):
                         print(f"Non-supported ansi char: {repr(raw)}")
                     return None
             # Change some character representations to readable strings
-            elif char in cmap.CHAR_TO_READABLE:
-                char = cmap.CHAR_TO_READABLE[char]
+            elif char in cMap.CHAR_TO_READABLE:
+                char = cMap.CHAR_TO_READABLE[char]
 
         return char
 
@@ -95,8 +95,8 @@ class UnixCharReader(CharReader):
         char: str,
     ) -> Union[tuple[str, str], tuple[None, str]]:
         char += self._read_unix_stdin(5)
-        if char in cmap.UNIX_ANSI_CHAR_TO_READABLE:
-            return cmap.UNIX_ANSI_CHAR_TO_READABLE[char], char
+        if char in cMap.UNIX_ANSI_CHAR_TO_READABLE:
+            return cMap.UNIX_ANSI_CHAR_TO_READABLE[char], char
         else:
             return None, char
 

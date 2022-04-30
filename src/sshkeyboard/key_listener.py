@@ -29,9 +29,9 @@ try:
 except ModuleNotFoundError:
     from typing import Any, Awaitable, Callable, Coroutine, Dict, Optional, Union
 
-    FuncT = TypeVar("FuncT", bound=Callable[..., Any])
+    T = TypeVar("T")
 
-    def _noop_dec(func: FuncT) -> FuncT:
+    def _noop_dec(func: T) -> T:
         return func
 
     beartype: Callable[..., Any] = _noop_dec  # type: ignore[no-redef]
